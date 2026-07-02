@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DashPet</title>
+<script src="config.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root{
+    --bg:#f6f3ee; --card:#ffffff; --ink:#2b2a26; --muted:#8a857c;
+    --brand:#e8632c; --brand-d:#c44f1e; --price:#d6371f; --line:#ece6db;
+    --star:#f5a623; --ok:#2e8b57; --danger:#c0392b; --warn:#d98a1f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI",Roboto,Tahoma,sans-serif;line-height:1.45;padding-bottom:66px;}
+  .app{max-width:520px;margin:0 auto;}
+  /* Basliq */
+  .top{position:sticky;top:0;z-index:20;background:var(--brand);color:#fff;padding:10px 14px;
+    box-shadow:0 2px 8px rgba(0,0,0,.12);}
+  .top .brand{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:19px;}
+  .top .loc{font-size:12px;opacity:.9;font-weight:400;}
+  .search{margin-top:9px;background:#fff;border-radius:12px;padding:9px 12px;display:flex;gap:8px;align-items:center;}
+  .search input{border:0;outline:0;width:100%;font-size:14px;color:var(--ink);}
+  .back{background:none;border:0;color:#fff;font-size:20px;cursor:pointer;padding:0 8px 0 0;}
+  /* Umumi */
+  .wrap{padding:12px 12px 20px;}
+  h2{font-size:17px;margin:14px 2px 8px;}
+  .muted{color:var(--muted);font-size:13px;}
+  .cats{display:flex;gap:10px;overflow-x:auto;padding:12px 12px 4px;scrollbar-width:none;}
+  .cats::-webkit-scrollbar{display:none;}
+  .cat{flex:0 0 auto;text-align:center;cursor:pointer;width:62px;}
+  .cat .ic{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;
+    font-size:28px;margin:0 auto;background:#fff;border:1px solid var(--line);}
+  .cat.active .ic{background:var(--brand);border-color:var(--brand);}
+  .cat .lb{font-size:11px;margin-top:4px;color:var(--muted);}
+  .cat.active .lb{color:var(--brand);font-weight:700;}
+  /* Mehsul grid */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 12px;}
+  .pcard{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;}
+  .pimg{position:relative;height:120px;display:flex;align-items:center;justify-content:center;font-size:52px;}
+  .spons{position:absolute;top:6px;left:6px;background:#fff3e0;color:var(--brand-d);font-size:10px;
+    font-weight:700;padding:2px 7px;border-radius:8px;border:1px solid #ffd9b3;}
+  .pinfo{padding:8px 9px 10px;}
+  .pname{font-size:13px;font-weight:600;line-height:1.25;height:34px;overflow:hidden;}
+  .pshop{font-size:11px;color:var(--muted);margin-top:2px;}
+  .prate{font-size:11px;color:var(--star);margin-top:3px;}
+  .pprice{font-size:15px;font-weight:800;color:var(--price);margin-top:3px;}
+  /* Duymeler */
+  button.btn{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:13px;font-size:15px;
+    font-weight:700;cursor:pointer;width:100%;}
+  button.btn:active{background:var(--brand-d);}
+  button.ghost{background:#fff;color:var(--brand);border:1.5px solid var(--brand);}
+  .qty{display:flex;align-items:center;gap:12px;justify-content:center;}
+  .qty button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:18px;cursor:pointer;}
+  /* Detal */
+  .detail .big{height:220px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:96px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;margin:10px 12px;}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .comment{border-top:1px solid var(--line);padding:9px 0;}
+  .comment:first-child{border-top:0;}
+  .cname{font-weight:600;font-size:13px;}
+  .stars{color:var(--star);font-size:12px;}
+  /* Sebet */
+  .citem{display:flex;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;margin:10px 12px;}
+  .citem .ci{width:64px;height:64px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:34px;background:#f3ede3;flex:0 0 auto;}
+  .empty{text-align:center;padding:70px 20px;color:var(--muted);}
+  .empty .big{font-size:60px;}
+  /* Aşağı naviqasiya */
+  .nav{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;background:#fff;
+    border-top:1px solid var(--line);display:flex;z-index:30;}
+  .nav button{flex:1;background:none;border:0;padding:8px 2px 7px;color:var(--muted);font-size:11px;cursor:pointer;position:relative;}
+  .nav button.active{color:var(--brand);}
+  .nav .ni{font-size:21px;display:block;}
+  .badge{position:absolute;top:3px;right:22px;background:var(--price);color:#fff;font-size:10px;
+    min-width:16px;height:16px;border-radius:8px;padding:0 4px;line-height:16px;font-weight:700;}
+  /* Ayarlar */
+  .set-row{background:#fff;border:1px solid var(--line);border-radius:12px;margin:8px 12px;overflow:hidden;}
+  .faq-q{padding:12px;cursor:pointer;display:flex;justify-content:space-between;font-weight:600;font-size:14px;}
+  .faq-a{padding:0 12px 12px;color:var(--muted);font-size:13px;display:none;}
+  .lang{display:flex;gap:8px;padding:12px;}
+  .lang button{flex:1;padding:9px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px;}
+  .lang button.active{background:var(--brand);color:#fff;border-color:var(--brand);}
+  #map{height:62vh;border-radius:0;margin:0;}
+  input.f,textarea.f,select.f{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;font-size:15px;margin:6px 0;background:#fff;}
+  .sso{flex:1;padding:11px;border-radius:12px;border:1px solid var(--line);background:#fff;font-weight:600;cursor:pointer;font-size:14px;color:var(--ink);}
+  .alink{background:none;border:0;color:var(--brand);font-size:13px;font-weight:600;cursor:pointer;padding:6px 0;}
+  .divider{display:flex;align-items:center;gap:10px;margin:14px 0 8px;color:var(--muted);font-size:12px;}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line);}
+  .err{color:var(--danger);font-size:13px;} .ok{color:var(--ok);font-size:13px;}
+  .u-EMERGENCY{background:#fdecea;color:var(--danger);border:1px solid var(--danger);}
+  .u-URGENT{background:#fdf3e2;color:var(--warn);border:1px solid var(--warn);}
+  .u-ROUTINE{background:#eaf6ee;color:var(--ok);border:1px solid var(--ok);}
+  .u-INFO{background:#eef1f4;color:#4a5568;}
+  .pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;}
+  .tag{font-size:11px;background:#f3ede3;color:var(--muted);padding:2px 8px;border-radius:8px;}
+</style>
+</head>
+<body>
+<div class="app" id="root"></div>
+<div class="nav" id="nav"></div>
+
+<script>
+// ================= Kicik kömekci =================
+// API unvani: GitHub Pages versiyasinda config.js DASHPET_API-ni tunel unvanina
+// qurur; Django /app/ versiyasinda bos qalir (eyni server).
+window.DASHPET_API = window.DASHPET_API || "";
+const API = window.DASHPET_API + "/api";
+const T={get:()=>localStorage.getItem("token"),set:t=>localStorage.setItem("token",t),clear:()=>localStorage.removeItem("token")};
+const LANG={get:()=>localStorage.getItem("lang")||"az",set:l=>localStorage.setItem("lang",l)};
+var S={view:"home",user:null,products:[],markets:[],cart:{},category:null,pid:null,pay:null};
+
+// Dil lugeti (interfeys etiketleri). Mehsul adlari ve FAQ Azerbaycanca qalir.
+const I18N={
+  az:{home:"Ana səhifə",card:"Səbət",maps:"Xəritə",settings:"Ayarlar",search:"Məhsul axtar…",
+    add:"Səbətə at",buy:"Satın al",confirm:"Təsdiq et",total:"Cəm",delivery:"Çatdırılma haqqı",
+    empty:"Səbətiniz boşdur",bought:"nəfər aldı",comments:"Şərhlər",also:"Bunları da bəyənə bilərsən",
+    similar:"Oxşar məhsullar",signout:"Çıxış",cs:"Müştəri xidməti",language:"Dil",sponsored:"Sponsorlu",
+    all:"Hamısı",orders:"Sifarişlərim",triage:"AI Triaj",myorders:"Sifarişlərim"},
+  en:{home:"Home",card:"Cart",maps:"Map",settings:"Settings",search:"Search products…",
+    add:"Add to cart",buy:"Buy",confirm:"Confirm",total:"Total",delivery:"Delivery fee",
+    empty:"Your cart is empty",bought:"bought",comments:"Comments",also:"You might also like",
+    similar:"Similar products",signout:"Sign out",cs:"Customer service",language:"Language",sponsored:"Sponsored",
+    all:"All",orders:"My orders",triage:"AI Triage",myorders:"My orders"},
+  ru:{home:"Главная",card:"Корзина",maps:"Карта",settings:"Настройки",search:"Поиск товаров…",
+    add:"В корзину",buy:"Купить",confirm:"Подтвердить",total:"Итого",delivery:"Доставка",
+    empty:"Корзина пуста",bought:"купили",comments:"Отзывы",also:"Вам может понравиться",
+    similar:"Похожие товары",signout:"Выход",cs:"Поддержка",language:"Язык",sponsored:"Реклама",
+    all:"Все",orders:"Мои заказы",triage:"AI Триаж",myorders:"Мои заказы"},
+};
+const t=k=>(I18N[LANG.get()]||I18N.az)[k]||k;
+
+async function api(path,opts={}){
+  const h={"Content-Type":"application/json"};
+  if(T.get()) h["Authorization"]="Token "+T.get();
+  const r=await fetch(API+path,{headers:h,...opts});
+  let d=null; try{d=await r.json();}catch(e){}
+  return {ok:r.ok,status:r.status,data:d};
+}
+async function apiAll(path){ // sehifelenmis siyahilari tam yigir
+  let url=API+path, out=[]; const h={}; if(T.get())h["Authorization"]="Token "+T.get();
+  while(url){ const r=await fetch(url,{headers:h}); const d=await r.json(); out=out.concat(d.results||[]); url=d.next; }
+  return out;
+}
+const azn=q=>(q/100).toFixed(2)+" ₼";
+const el=id=>document.getElementById(id);
+// XSS qorunmasi: bazadan/istifadeciden gelen metni HTML kimi ISLETME.
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+// --- Heyvan növü / şəkil (emoji) — mehsul adindan cixarilir ---
+function species(name){
+  const n=name.toLowerCase();
+  if(n.includes("dovsan"))return{e:"🐰",k:"other",bg:"#f0ecf7"};
+  if(n.includes("tisbaga"))return{e:"🐢",k:"other",bg:"#eaf5ec"};
+  if(n.startsWith("it ")||n.includes(" it ")||n.startsWith("it"))return{e:"🐕",k:"dog",bg:"#eaf1fb"};
+  if(n.includes("pisik"))return{e:"🐱",k:"cat",bg:"#f7efe4"};
+  if(n.includes("qus"))return{e:"🐦",k:"bird",bg:"#eaf6ee"};
+  if(n.includes("baliq")||n.includes("akvarium"))return{e:"🐟",k:"fish",bg:"#e7f3f7"};
+  return{e:"🐾",k:"other",bg:"#f2ede4"};
+}
+// --- Saxta (placeholder) məlumatlar — id-ye görə sabit ---
+const rating=id=>(4.0+(id*7%10)/10).toFixed(1);
+const sold=id=>20+(id*37%380);
+const sponsored=id=>id%5===0;
+const CPOOL=[["Aygün","Çox keyfiyyətlidir, itim çox sevdi."],["Elvin","Sürətli çatdırılma, təşəkkürlər."],
+  ["Nigar","Qiymətinə görə əladır, tövsiyə edirəm."],["Rəşad","Pişiyim bəyəndi, yenidən alacam."],
+  ["Günel","Qablaşdırma səliqəli idi."],["Tural","Keyfiyyət gözlədiyimdən yaxşı çıxdı."]];
+const comments=id=>[CPOOL[id%CPOOL.length],CPOOL[(id+2)%CPOOL.length]];
+const stars=r=>{const f=Math.round(r);return "★".repeat(f)+"☆".repeat(5-f);};
+
+// ================= Naviqasiya =================
+function go(v){S.view=v;S.pid=null;S.pay=null;window.scrollTo(0,0);render();}
+function cartCount(){return Object.values(S.cart).reduce((s,c)=>s+c.qty,0);}
+function renderNav(){
+  if(!T.get()){el("nav").innerHTML="";return;}
+  const items=[["home","ti","🏠"],["card","🛒"],["maps","🗺️"],["settings","⚙️"]];
+  const defs=[["home","🏠",t("home")],["card","🛒",t("card")],["maps","🗺️",t("maps")],["settings","⚙️",t("settings")]];
+  el("nav").innerHTML=defs.map(([k,ic,lb])=>{
+    const badge=(k==="card"&&cartCount())?`<span class="badge">${cartCount()}</span>`:"";
+    return `<button class="${S.view===k?'active':''}" onclick="go('${k}')">
+      <span class="ni">${ic}</span>${lb}${badge}</button>`;
+  }).join("");
+}
+
+// ================= Əsas render =================
+async function render(){
+  renderNav();
+  const r=el("root");
+  if(!T.get())return renderAuth(r);
+  if(S.view==="home")return renderHome(r);
+  if(S.view==="product")return renderProduct(r);
+  if(S.view==="card")return renderCart(r);
+  if(S.view==="maps")return renderMaps(r);
+  if(S.view==="settings")return renderSettings(r);
+  if(S.view==="orders")return renderOrders(r);
+}
+
+// ================= Giriş / Qeydiyyat / Parol bərpası =================
+var AUTHV="login";      // login | register | forgot1 | forgot2
+var RESET_EMAIL="";     // berpa axininda email yadda qalsin
+function setAuth(v){AUTHV=v;render();}
+function ssoSoon(p){toast(p+" girişi tezliklə aktivləşəcək");}
+function ssoBlock(){
+  return `<div class="divider">və ya</div>
+    <div style="display:flex;gap:8px">
+      <button class="sso" onclick="ssoSoon('Google')">🔴 Google ilə</button>
+      <button class="sso" onclick="ssoSoon('Apple')">🍏 Apple ilə</button>
+    </div>
+    <p class="muted" style="text-align:center;margin:8px 0 0;font-size:11px">Google/Apple girişi tezliklə (domain açılandan sonra)</p>`;
+}
+function renderAuth(r){
+  if(AUTHV==="register")return renderRegister(r);
+  if(AUTHV==="forgot1")return renderForgot1(r);
+  if(AUTHV==="forgot2")return renderForgot2(r);
+  r.innerHTML=`
+  <div class="top"><div class="brand"><span>🐾 DashPet</span></div></div>
+  <div class="wrap">
+    <h2>Giriş 🐾</h2>
+    <div class="card">
+      <input class="f" id="phone" placeholder="Telefon: +994501234567" autocomplete="username">
+      <input class="f" id="pw" type="password" placeholder="Parol" autocomplete="current-password">
+      <div id="amsg"></div>
+      <button class="btn" onclick="doLogin()">Giriş</button>
+      <div style="text-align:right;margin-top:4px">
+        <button class="alink" onclick="setAuth('forgot1')">Parolu unutdum</button>
+      </div>
+      ${ssoBlock()}
+      <div style="text-align:center;margin-top:14px" class="muted">Hesabın yoxdur?
+        <button class="alink" onclick="setAuth('register')">Qeydiyyatdan keç</button></div>
+    </div></div>`;
+}
+function renderRegister(r){
+  r.innerHTML=`
+  <div class="top"><div class="brand"><button class="back" onclick="setAuth('login')">‹</button><span>Qeydiyyat</span><span></span></div></div>
+  <div class="wrap">
+    <h2>Hesab yarat 🐾</h2>
+    <div class="card">
+      <input class="f" id="rname" placeholder="Adın">
+      <input class="f" id="rphone" placeholder="Telefon: +994501234567" autocomplete="username">
+      <input class="f" id="remail" type="email" placeholder="Email: sen@mail.com" autocomplete="email">
+      <input class="f" id="rpw" type="password" placeholder="Parol (ən azı 8 simvol)" autocomplete="new-password">
+      <div id="amsg"></div>
+      <button class="btn" onclick="doRegister()">Qeydiyyatdan keç</button>
+      ${ssoBlock()}
+      <div style="text-align:center;margin-top:14px" class="muted">Hesabın var?
+        <button class="alink" onclick="setAuth('login')">Giriş</button></div>
+    </div></div>`;
+}
+function renderForgot1(r){
+  r.innerHTML=`
+  <div class="top"><div class="brand"><button class="back" onclick="setAuth('login')">‹</button><span>Parol bərpası</span><span></span></div></div>
+  <div class="wrap">
+    <h2>Parolu unutdum 🔑</h2>
+    <div class="card">
+      <p class="muted">Qeydiyyatdakı email ünvanını yaz — sənə 6 rəqəmli bərpa kodu göndərəcəyik.</p>
+      <input class="f" id="femail" type="email" placeholder="Email: sen@mail.com">
+      <div id="amsg"></div>
+      <button class="btn" onclick="doForgot()">Kod göndər</button>
+    </div></div>`;
+}
+function renderForgot2(r){
+  r.innerHTML=`
+  <div class="top"><div class="brand"><button class="back" onclick="setAuth('forgot1')">‹</button><span>Kodu daxil et</span><span></span></div></div>
+  <div class="wrap">
+    <h2>Emailinə kod göndərildi 📧</h2>
+    <div class="card">
+      <p class="muted">${esc(RESET_EMAIL)} ünvanına gələn 6 rəqəmli kodu və yeni parolunu yaz. Kod 10 dəqiqə etibarlıdır.</p>
+      <input class="f" id="fcode" inputmode="numeric" maxlength="6" placeholder="6 rəqəmli kod">
+      <input class="f" id="fnewpw" type="password" placeholder="Yeni parol (ən azı 8 simvol)" autocomplete="new-password">
+      <div id="amsg"></div>
+      <button class="btn" onclick="doReset()">Parolu yenilə</button>
+    </div></div>`;
+}
+function showErr(d){el("amsg").innerHTML=`<p class="err">${esc(typeof d==="string"?d:Object.values(d).flat().join(" "))}</p>`;}
+async function doRegister(){
+  const b=JSON.stringify({phone:el("rphone").value,email:el("remail").value,
+    password:el("rpw").value,name:el("rname").value});
+  const r=await api("/auth/register/",{method:"POST",body:b});
+  if(r.ok){T.set(r.data.token);await boot();go("home");}
+  else showErr(r.data||"Xəta baş verdi.");
+}
+async function doLogin(){
+  const b=JSON.stringify({phone:el("phone").value,password:el("pw").value});
+  const r=await api("/auth/login/",{method:"POST",body:b});
+  if(r.ok){T.set(r.data.token);await boot();go("home");}
+  else showErr(r.data?.detail||"Xəta baş verdi.");
+}
+async function doForgot(){
+  RESET_EMAIL=el("femail").value.trim();
+  if(!RESET_EMAIL){showErr("Email daxil edin.");return;}
+  el("amsg").innerHTML=`<p class="muted">Göndərilir...</p>`;
+  const r=await api("/auth/forgot/",{method:"POST",body:JSON.stringify({email:RESET_EMAIL})});
+  if(r.ok)setAuth("forgot2"); else showErr(r.data?.detail||"Xəta baş verdi.");
+}
+async function doReset(){
+  const b=JSON.stringify({email:RESET_EMAIL,code:el("fcode").value.trim(),new_password:el("fnewpw").value});
+  el("amsg").innerHTML=`<p class="muted">Yoxlanılır...</p>`;
+  const r=await api("/auth/reset/",{method:"POST",body:b});
+  if(r.ok){AUTHV="login";render();toast("Parol yeniləndi ✓ İndi giriş et");}
+  else showErr(r.data?.detail||"Xəta baş verdi.");
+}
+
+// ================= Home =================
+function marketName(id){const m=S.markets.find(x=>x.id===id);return m?m.name:"";}
+function pcard(p){
+  const sp=species(p.name);
+  return `<div class="pcard" onclick="openProduct(${p.id})">
+    <div class="pimg" style="background:${sp.bg}">${sp.e}
+      ${sponsored(p.id)?`<span class="spons">${t("sponsored")}</span>`:""}</div>
+    <div class="pinfo">
+      <div class="pname">${esc(p.name)}</div>
+      <div class="pshop">${esc(marketName(p.market))}</div>
+      <div class="prate">★ ${rating(p.id)} · ${sold(p.id)} ${t("bought")}</div>
+      <div class="pprice">${p.price_azn}</div>
+    </div></div>`;
+}
+const CATS=[["dog","🐕","İt"],["cat","🐱","Pişik"],["bird","🐦","Quş"],["fish","🐟","Balıq"],["other","🐾","Digər"]];
+function renderHome(r){
+  const q=(S._q||"").toLowerCase();
+  let list=S.products.filter(p=>p.is_active!==false);
+  if(S.category)list=list.filter(p=>species(p.name).k===S.category);
+  if(q)list=list.filter(p=>p.name.toLowerCase().includes(q));
+  r.innerHTML=`
+  <div class="top">
+    <div class="brand"><span>🐾 DashPet</span><span class="loc">📍 Bakı–Sumqayıt</span></div>
+    <div class="search">🔍<input id="q" placeholder="${t("search")}" value="${esc(S._q||"")}"
+      oninput="S._q=this.value;clearTimeout(window._st);window._st=setTimeout(()=>renderGridOnly(),250)"></div>
+  </div>
+  <div class="cats">
+    <div class="cat ${!S.category?'active':''}" onclick="setCat(null)"><div class="ic">🐾</div><div class="lb">${t("all")}</div></div>
+    ${CATS.map(([k,e,l])=>`<div class="cat ${S.category===k?'active':''}" onclick="setCat('${k}')">
+      <div class="ic">${e}</div><div class="lb">${l}</div></div>`).join("")}
+  </div>
+  <div id="grid" class="grid">${list.map(pcard).join("")||`<p class="muted" style="padding:20px">Məhsul tapılmadı.</p>`}</div>`;
+}
+function renderGridOnly(){ // yalniz grid-i yenile (axtaris zamani fokus itmesin)
+  const q=(S._q||"").toLowerCase();let list=S.products.slice();
+  if(S.category)list=list.filter(p=>species(p.name).k===S.category);
+  if(q)list=list.filter(p=>p.name.toLowerCase().includes(q));
+  const g=el("grid"); if(g)g.innerHTML=list.map(pcard).join("")||`<p class="muted" style="padding:20px">Məhsul tapılmadı.</p>`;
+}
+function setCat(c){S.category=c;render();}
+
+// ================= Mehsul səhifəsi =================
+function openProduct(id){S.pid=id;S.view="product";window.scrollTo(0,0);render();}
+function findP(id){return S.products.find(p=>p.id===id);}
+function renderProduct(r){
+  const p=findP(S.pid); if(!p){go("home");return;}
+  const sp=species(p.name);
+  const like=S.products.filter(x=>x.id!==p.id).slice(0,4);
+  const sim=S.products.filter(x=>x.id!==p.id&&species(x.name).k===sp.k).slice(0,4);
+  const cs=comments(p.id);
+  r.innerHTML=`
+  <div class="top"><div class="brand"><button class="back" onclick="go('home')">‹</button><span>${esc(p.name)}</span><span></span></div></div>
+  <div class="detail">
+    <div class="big" style="background:${sp.bg}">${sp.e}</div>
+    <div class="card">
+      ${sponsored(p.id)?`<span class="pill" style="background:#fff3e0;color:var(--brand-d)">${t("sponsored")}</span>`:""}
+      <h2 style="margin:6px 0">${esc(p.name)}</h2>
+      <div class="muted">${esc(marketName(p.market))}</div>
+      <div class="row" style="margin-top:8px">
+        <span class="pprice" style="font-size:22px">${p.price_azn}</span>
+        <span class="prate">★ ${rating(p.id)} · ${sold(p.id)} ${t("bought")}</span>
+      </div>
+      <div style="margin-top:10px"><span class="tag">${p.category}</span> <span class="tag">Stok: ${p.stock_qty}</span></div>
+      <div style="margin-top:12px"><button class="btn" onclick="addCart(${p.id})">🛒 ${t("add")}</button></div>
+    </div>
+    <div class="card">
+      <h2 style="margin:0 0 6px">${t("comments")}</h2>
+      ${cs.map(([n,txt])=>`<div class="comment"><div class="cname">${n} <span class="stars">★★★★★</span></div><div class="muted">${txt}</div></div>`).join("")}
+    </div>
+    <h2 style="margin-left:14px">${t("also")}</h2>
+    <div class="grid">${like.map(pcard).join("")}</div>
+    <h2 style="margin-left:14px">${t("similar")}</h2>
+    <div class="grid">${sim.map(pcard).join("")||`<p class="muted" style="padding:0 14px">—</p>`}</div>
+  </div>`;
+}
+function addCart(id){
+  const p=findP(id); if(!p)return;
+  const c=S.cart[id]||{qty:0,p};c.qty++;S.cart[id]=c;
+  renderNav(); toast(t("add")+" ✓");
+}
+function toast(msg){
+  let x=el("_toast"); if(!x){x=document.createElement("div");x.id="_toast";
+    x.style.cssText="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2b2a26;color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;z-index:50;";
+    document.body.appendChild(x);}
+  x.textContent=msg;x.style.opacity="1";clearTimeout(window._tt);window._tt=setTimeout(()=>x.style.opacity="0",1200);
+}
+
+// ================= Səbət =================
+function renderCart(r){
+  const items=Object.values(S.cart);
+  if(!items.length){r.innerHTML=`<div class="top"><div class="brand"><span>${t("card")}</span></div></div>
+    <div class="empty"><div class="big">🛒</div><p>${t("empty")}</p>
+    <button class="btn ghost" style="max-width:200px;margin:10px auto" onclick="go('home')">${t("home")}</button></div>`;return;}
+  const sub=items.reduce((s,c)=>s+c.p.price_qepik*c.qty,0);
+  r.innerHTML=`
+  <div class="top"><div class="brand"><span>${t("card")}</span><span class="loc">${cartCount()} məhsul</span></div></div>
+  <div style="padding-top:6px">
+    ${items.map(c=>{const sp=species(c.p.name);return `
+      <div class="citem">
+        <div class="ci" style="background:${sp.bg}">${sp.e}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">${esc(c.p.name)}</div>
+          <div class="muted">${esc(marketName(c.p.market))}</div>
+          <div class="row" style="margin-top:6px">
+            <span class="pprice">${azn(c.p.price_qepik*c.qty)}</span>
+            <span class="qty">
+              <button onclick="chQty(${c.p.id},-1)">−</button><b>${c.qty}</b><button onclick="chQty(${c.p.id},1)">+</button>
+            </span>
+          </div>
+        </div>
+      </div>`;}).join("")}
+    <div class="card">
+      <div class="row"><span>${t("total")}</span><b style="font-size:20px;color:var(--price)">${azn(sub)}</b></div>
+      <div id="paybox"><button class="btn" style="margin-top:10px" onclick="showPay(${sub})">${t("buy")}</button></div>
+    </div>
+  </div>`;
+}
+function chQty(id,d){const c=S.cart[id];if(!c)return;c.qty+=d;if(c.qty<=0)delete S.cart[id];render();}
+const DELIVERY=200; // 2.00 AZN (numune — sonra backend-e baglanacaq)
+function showPay(sub){
+  el("paybox").innerHTML=`
+    <div style="margin-top:12px;border-top:1px dashed var(--line);padding-top:10px">
+      <div class="row"><span>${t("total")}</span><b>${azn(sub)}</b></div>
+      <div class="row muted" style="margin-top:4px"><span>+ ${t("delivery")}</span><span>${azn(DELIVERY)}</span></div>
+      <div class="row" style="margin-top:6px;font-size:18px"><b>Yekun</b><b style="color:var(--price)">${azn(sub+DELIVERY)}</b></div>
+      <button class="btn" style="margin-top:10px" onclick="checkout()">${t("confirm")}</button>
+      <div id="cmsg"></div>
+    </div>`;
+}
+async function checkout(){
+  el("cmsg").innerHTML=`<p class="muted">Göndərilir...</p>`;
+  // Səbəti marketə görə qruplaşdır (backend hər sifarişdə tək market tələb edir)
+  const byMarket={};
+  Object.values(S.cart).forEach(c=>{(byMarket[c.p.market]=byMarket[c.p.market]||[]).push(c);});
+  const created=[];
+  for(const [mid,items] of Object.entries(byMarket)){
+    const body=JSON.stringify({market:+mid,delivery_address:"Bakı-Sumqayıt",
+      items:items.map(c=>({product:c.p.id,quantity:c.qty}))});
+    const r=await api("/orders/",{method:"POST",body});
+    if(!r.ok){el("cmsg").innerHTML=`<p class="err">${JSON.stringify(r.data)}</p>`;return;}
+    await api(`/orders/${r.data.id}/hold_payment/`,{method:"POST"}); // escrow
+    created.push(r.data.id);
+  }
+  S.cart={};S.pay={created};S.view="paydone";renderNav();renderPayDone(el("root"));
+}
+function renderPayDone(r){
+  r.innerHTML=`<div class="top"><div class="brand"><span>Təsdiqləndi</span></div></div>
+  <div class="empty"><div class="big">✅</div>
+    <h2>Sifarişiniz qəbul olundu!</h2>
+    <p class="muted">Ödəniş escrow-da saxlanıldı. Kuryer çatdıranda market payı avtomatik bölünəcək.</p>
+    <p class="muted">Sifariş nömrələri: ${S.pay.created.map(i=>"#"+i).join(", ")}</p>
+    <button class="btn" style="max-width:220px;margin:14px auto 0" onclick="go('home')">${t("home")}</button>
+    <button class="btn ghost" style="max-width:220px;margin:8px auto 0" onclick="go('orders')">${t("myorders")}</button>
+  </div>`;
+}
+
+// ================= Sifarişlərim =================
+async function renderOrders(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>${t("myorders")}</span><span></span></div></div>
+    <div id="os" class="wrap"><p class="muted">Yüklənir...</p></div>`;
+  const list=await apiAll("/orders/");
+  const staff=S.user&&(S.user.role==="ADMIN"||S.user.username==="admin");
+  el("os").innerHTML=list.length?list.map(o=>{
+    const items=(o.items||[]).map(i=>`${i.quantity}× ${esc(i.product_name)}`).join(", ");
+    let act="";
+    if(o.status==="CREATED")act=ob(o.id,"hold_payment","Ödə (escrow)");
+    else if(o.status==="PAYMENT_HELD"&&staff)act=ob(o.id,"out_for_delivery","Yola çıxdı");
+    else if(o.status==="OUT_FOR_DELIVERY"&&staff)act=ob(o.id,"confirm_delivery","Çatdırıldı → böl");
+    else if(o.status==="RELEASED"&&staff)act=ob(o.id,"payout","Marketə ödə");
+    return `<div class="card" style="margin:10px 0"><div class="row"><b>Sifariş #${o.id}</b>
+      <span class="tag">${o.status_display}</span></div>
+      <div class="muted">${items}</div>
+      <div class="row" style="margin-top:6px"><b>${o.total_azn}</b></div>
+      <div id="oa${o.id}">${act}</div></div>`;
+  }).join(""):`<p class="muted">Hələ sifariş yoxdur.</p>`;
+}
+function ob(id,a,l){return `<button class="btn" style="margin-top:8px" onclick="oAct(${id},'${a}')">${l}</button>`;}
+async function oAct(id,a){const r=await api(`/orders/${id}/${a}/`,{method:"POST"});
+  if(r.ok)renderOrders(el("root"));else{const b=el("oa"+id);if(b)b.innerHTML+=`<p class="err">${r.data.detail||JSON.stringify(r.data)}</p>`;}}
+
+// ================= Xəritə =================
+function renderMaps(r){
+  r.innerHTML=`<div class="top"><div class="brand"><span>${t("maps")}</span><span class="loc">Bakı–Sumqayıt</span></div></div>
+    <div id="map"></div>
+    <p class="muted" style="padding:10px 14px">📍 Sənin evin · 🏪 partnyor zoomarketlər. (Nümunə konumlar — real Google Maps sonra.)</p>`;
+  setTimeout(initMap,50);
+}
+function initMap(){
+  if(typeof L==="undefined"){el("map").innerHTML="<p style='padding:20px' class='muted'>Xəritə üçün internet lazımdır.</p>";return;}
+  const bounds=[[40.30,49.55],[40.66,50.02]]; // Bakı-Sumqayıt sərhədi
+  const map=L.map("map",{maxBounds:bounds,maxBoundsViscosity:1,minZoom:10,maxZoom:15}).setView([40.47,49.80],11);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap"}).addTo(map);
+  // Müştərinin evi (nümunə)
+  L.marker([40.40,49.85]).addTo(map).bindPopup("📍 Sənin evin");
+  // Marketlər
+  S.markets.forEach(m=>{ if(m.latitude&&m.longitude)
+    L.marker([m.latitude,m.longitude]).addTo(map).bindPopup("🏪 "+esc(m.name)+"<br>"+esc(m.address||"")); });
+}
+
+// ================= Ayarlar =================
+function renderSettings(r){
+  const L2=LANG.get();
+  r.innerHTML=`<div class="top"><div class="brand"><span>${t("settings")}</span></div></div>
+  <div class="wrap">
+    <h2>${t("language")}</h2>
+    <div class="set-row"><div class="lang">
+      <button class="${L2==='az'?'active':''}" onclick="setLang('az')">Azərbaycanca</button>
+      <button class="${L2==='en'?'active':''}" onclick="setLang('en')">English</button>
+      <button class="${L2==='ru'?'active':''}" onclick="setLang('ru')">Русский</button>
+    </div></div>
+    <h2>${t("myorders")}</h2>
+    <div class="set-row"><div class="faq-q" onclick="go('orders')"><span>📦 ${t("myorders")}</span><span>›</span></div></div>
+    <div class="set-row"><div class="faq-q" onclick="go('triageview')"><span>🩺 ${t("triage")}</span><span>›</span></div></div>
+    <h2>${t("cs")}</h2>
+    ${FAQ.map((f,i)=>`<div class="set-row"><div class="faq-q" onclick="toggleFaq(${i})">
+      <span>${f[0]}</span><span id="fi${i}">+</span></div><div class="faq-a" id="fa${i}">${f[1]}</div></div>`).join("")}
+    <div style="height:14px"></div>
+    <button class="btn ghost" style="margin:0 12px;width:calc(100% - 24px)" onclick="doLogout()">${t("signout")}</button>
+    <p class="muted" style="text-align:center;margin-top:14px">DashPet · Bakı–Sumqayıt 🐾</p>
+  </div>`;
+}
+function setLang(l){LANG.set(l);render();}
+function toggleFaq(i){const a=el("fa"+i),ic=el("fi"+i);const open=a.style.display==="block";
+  a.style.display=open?"none":"block";ic.textContent=open?"+":"–";}
+async function doLogout(){await api("/auth/logout/",{method:"POST"});T.clear();S={view:"home",user:null,products:[],markets:[],cart:{}};go("home");}
+
+const FAQ=[
+  ["Çatdırılma nə qədər vaxt aparır?","Bakı-Sumqayıt üzrə sifarişlər adətən seçdiyiniz zaman pəncərəsində (məs. bu gün 16:00–20:00) çatdırılır."],
+  ["Ödənişi necə edə bilərəm?","Kartla ödəyirsiniz. Pul çatdırılma təsdiqlənənə qədər təhlükəsiz saxlanılır (escrow), sonra market payı avtomatik köçürülür."],
+  ["Abunəlik necə işləyir?","Yem və ya qum üçün aylıq/həftəlik plan qurursunuz; saxlanmış kartla avtomatik tutulur və heyvanınızın adı ilə çatdırılır."],
+  ["Məhsulu geri qaytara bilərəm?","Bəli. Çatdırılmadan əvvəl ləğv edə, çatdırıldıqdan sonra isə uyğun hallarda geri qaytarma tələb edə bilərsiniz."],
+  ["Baytar çağırışı var?","Heyvanınız pis olanda AI Triaj köməkçisi vəziyyəti qiymətləndirir və lazım olsa partnyor klinikaya yönləndirir."],
+  ["Hansı zonalara çatdırırsınız?","Hazırda yalnız Bakı və Sumqayıt. Yeni zonalar tezliklə əlavə olunacaq."],
+  ["Sifarişimi necə izləyə bilərəm?","'Sifarişlərim' bölməsindən statusu görürsünüz: ödəniş tutuldu, yolda, çatdırıldı."],
+  ["Kart məlumatlarım təhlükəsizdir?","Bəli. Kart nömrəniz bizdə saxlanılmır — yalnız lisenziyalı ödəniş provayderinin təhlükəsiz yaddaşında olur."],
+  ["Hesabımı necə silə bilərəm?","Müştəri xidməti ilə əlaqə saxlayın; hesabınız və məlumatlarınız tələbinizlə silinir."],
+  ["AI köməkçi diaqnoz qoyur?","Xeyr. O yalnız təcililik səviyyəsini qiymətləndirir (triaj) və lazım olsa vetə yönləndirir — diaqnoz və dərman vermir."],
+];
+
+// ================= AI Triaj (Settings-dən) =================
+async function renderTriageView(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>${t("triage")}</span><span></span></div></div>
+  <div class="wrap"><div class="card">
+    <p class="muted">Heyvanının vəziyyətini yaz. Bu <b>diaqnoz deyil</b> — yalnız istiqamətdir.</p>
+    <textarea class="f" id="tq" rows="3" placeholder="Məs: pişiyim bu gün yeməkdən imtina edir"></textarea>
+    <button class="btn" onclick="doTriage()">Soruş</button>
+    <div id="tr"></div>
+  </div></div>`;
+}
+async function doTriage(){
+  el("tr").innerHTML=`<p class="muted">Düşünülür...</p>`;
+  const r=await api("/triage/",{method:"POST",body:JSON.stringify({message:el("tq").value})});
+  if(!r.ok){el("tr").innerHTML=`<p class="err">${r.data.detail||JSON.stringify(r.data)}</p>`;return;}
+  const d=r.data;
+  el("tr").innerHTML=`<div style="margin-top:12px" class="pill u-${esc(d.urgency)}">${esc(d.urgency)}${d.vet_now?" · DƏRHAL VETƏ":""}</div>
+    <p style="margin:10px 0 4px"><b>${esc(d.summary)}</b></p><p>${esc(d.recommended_action)}</p>
+    ${d.red_flags.length?`<p class="err">⚠ ${d.red_flags.map(esc).join(", ")}</p>`:""}
+    <p class="muted" style="margin-top:8px">${esc(d.disclaimer)}</p>`;
+}
+
+// ================= Başlanğıc =================
+async function boot(){
+  const me=await api("/auth/me/");
+  if(me.ok)S.user=me.data; else {T.clear();return;}
+  S.products=await apiAll("/products/");
+  S.markets=await apiAll("/markets/");
+}
+// 'triageview' üçün render əlavəsi
+const _origRender=render;
+render=async function(){
+  if(S.view==="triageview"){renderNav();return renderTriageView(el("root"));}
+  if(S.view==="paydone"){renderNav();return renderPayDone(el("root"));}
+  return _origRender();
+};
+async function init(){ if(T.get())await boot(); render(); }
+init();
+</script>
+</body>
+</html>
+
