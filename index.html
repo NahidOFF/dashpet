@@ -132,16 +132,20 @@ const I18N={
 };
 const t=k=>(I18N[LANG.get()]||I18N.az)[k]||k;
 
+const NET_ERR="Serverə qoşulmaq mümkün olmadı. İnternetini yoxla və bir azdan yenidən cəhd et.";
 async function api(path,opts={}){
   const h={"Content-Type":"application/json"};
   if(T.get()) h["Authorization"]="Token "+T.get();
-  const r=await fetch(API+path,{headers:h,...opts});
+  let r; try{r=await fetch(API+path,{headers:h,...opts});}
+  catch(e){return {ok:false,status:0,data:{detail:NET_ERR}};}
   let d=null; try{d=await r.json();}catch(e){}
   return {ok:r.ok,status:r.status,data:d};
 }
 async function apiAll(path){ // sehifelenmis siyahilari tam yigir
   let url=API+path, out=[]; const h={}; if(T.get())h["Authorization"]="Token "+T.get();
-  while(url){ const r=await fetch(url,{headers:h}); const d=await r.json(); out=out.concat(d.results||[]); url=d.next; }
+  try{
+    while(url){ const r=await fetch(url,{headers:h}); const d=await r.json(); out=out.concat(d.results||[]); url=d.next; }
+  }catch(e){}
   return out;
 }
 const azn=q=>(q/100).toFixed(2)+" ₼";
@@ -277,12 +281,14 @@ function showErr(d){el("amsg").innerHTML=`<p class="err">${esc(typeof d==="strin
 async function doRegister(){
   const b=JSON.stringify({phone:el("rphone").value,email:el("remail").value,
     password:el("rpw").value,name:el("rname").value});
+  el("amsg").innerHTML=`<p class="muted">Göndərilir...</p>`;
   const r=await api("/auth/register/",{method:"POST",body:b});
   if(r.ok){T.set(r.data.token);await boot();go("home");}
   else showErr(r.data||"Xəta baş verdi.");
 }
 async function doLogin(){
   const b=JSON.stringify({phone:el("phone").value,password:el("pw").value});
+  el("amsg").innerHTML=`<p class="muted">Göndərilir...</p>`;
   const r=await api("/auth/login/",{method:"POST",body:b});
   if(r.ok){T.set(r.data.token);await boot();go("home");}
   else showErr(r.data?.detail||"Xəta baş verdi.");
@@ -565,7 +571,8 @@ async function doTriage(){
 // ================= Başlanğıc =================
 async function boot(){
   const me=await api("/auth/me/");
-  if(me.ok)S.user=me.data; else {T.clear();return;}
+  if(me.ok)S.user=me.data;
+  else {T.clear();if(me.status===0)toast(NET_ERR);return;}
   S.products=await apiAll("/products/");
   S.markets=await apiAll("/markets/");
 }
@@ -576,7 +583,7 @@ render=async function(){
   if(S.view==="paydone"){renderNav();return renderPayDone(el("root"));}
   return _origRender();
 };
-async function init(){ if(T.get())await boot(); render(); }
+async function init(){ if(T.get()){try{await boot();}catch(e){}} render(); }
 init();
 </script>
 </body>
