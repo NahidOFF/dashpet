@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>DashPet</title>
-<script src="config.js?v=1783096089"></script>
+<script src="config.js?v=1783097246"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -107,7 +107,19 @@
 // API unvani: GitHub Pages versiyasinda config.js DASHPET_API-ni tunel unvanina
 // qurur; Django /app/ versiyasinda bos qalir (eyni server).
 window.DASHPET_API = window.DASHPET_API || "";
-const API = window.DASHPET_API + "/api";
+var API = window.DASHPET_API + "/api";
+// OZUNU-SAGALTMA: tunel unvani deyisibse, tezesini birbasa GitHub-dakı
+// config-den tap (Pages qurulmasini gozlemeden) ve sorgunu tekrarla.
+const RAW_CFG = "https://raw.githubusercontent.com/NahidOFF/dashpet/main/config.js";
+async function refreshApiBase(){
+  if(!window.DASHPET_API) return false; // Django /app/ rejimi — eyni server
+  try{
+    const txt = await (await fetch(RAW_CFG + "?t=" + Date.now(), {cache:"no-store"})).text();
+    const m = txt.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/);
+    if(m && (m[0] + "/api") !== API){ API = m[0] + "/api"; return true; }
+  }catch(e){}
+  return false;
+}
 const T={get:()=>localStorage.getItem("token"),set:t=>localStorage.setItem("token",t),clear:()=>localStorage.removeItem("token")};
 const LANG={get:()=>localStorage.getItem("lang")||"az",set:l=>localStorage.setItem("lang",l)};
 var S={view:"home",user:null,products:[],markets:[],cart:{},category:null,pid:null,pay:null};
@@ -133,7 +145,7 @@ const I18N={
 const t=k=>(I18N[LANG.get()]||I18N.az)[k]||k;
 
 const OFFLINE_MSG="Serverə qoşulmaq olmur. Bir neçə dəqiqə sonra yenidən yoxla — server yenilənir ola bilər. 🐾";
-async function api(path,opts={}){
+async function api(path,opts={},_retried){
   const h={"Content-Type":"application/json"};
   if(T.get()) h["Authorization"]="Token "+T.get();
   try{
@@ -141,16 +153,18 @@ async function api(path,opts={}){
     let d=null; try{d=await r.json();}catch(e){}
     return {ok:r.ok,status:r.status,data:d};
   }catch(e){
-    // Server elcatan deyil (tunel/komputer sonulu) — duyme "olu" qalmasin,
-    // aciq mesaj qaytaraq.
+    // Tunel unvani deyisib ola biler — tezesini tapib BIR defe tekrarla.
+    if(!_retried && await refreshApiBase()) return api(path,opts,true);
     return {ok:false,status:0,data:{detail:OFFLINE_MSG}};
   }
 }
-async function apiAll(path){ // sehifelenmis siyahilari tam yigir
+async function apiAll(path,_retried){ // sehifelenmis siyahilari tam yigir
   let url=API+path, out=[]; const h={}; if(T.get())h["Authorization"]="Token "+T.get();
   try{
     while(url){ const r=await fetch(url,{headers:h}); const d=await r.json(); out=out.concat(d.results||[]); url=d.next; }
-  }catch(e){}
+  }catch(e){
+    if(!_retried && await refreshApiBase()) return apiAll(path,true);
+  }
   return out;
 }
 const azn=q=>(q/100).toFixed(2)+" ₼";
