@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>DashPet</title>
-<script src="config.js?v=1783097246"></script>
+<script src="config.js?v=1783114450"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -122,7 +122,7 @@ async function refreshApiBase(){
 }
 const T={get:()=>localStorage.getItem("token"),set:t=>localStorage.setItem("token",t),clear:()=>localStorage.removeItem("token")};
 const LANG={get:()=>localStorage.getItem("lang")||"az",set:l=>localStorage.setItem("lang",l)};
-var S={view:"home",user:null,products:[],markets:[],cart:{},category:null,pid:null,pay:null};
+var S={view:"home",user:null,products:[],markets:[],cart:{},category:null,pid:null,pay:null,unread:0};
 
 // Dil lugeti (interfeys etiketleri). Mehsul adlari ve FAQ Azerbaycanca qalir.
 const I18N={
@@ -347,16 +347,50 @@ function renderHome(r){
   if(q)list=list.filter(p=>p.name.toLowerCase().includes(q));
   r.innerHTML=`
   <div class="top">
-    <div class="brand"><span>🐾 DashPet</span><span class="loc">📍 Bakı–Sumqayıt</span></div>
+    <div class="brand"><span>🐾 DashPet</span>
+      <span style="display:flex;align-items:center;gap:12px"><span class="loc">📍 Bakı–Sumqayıt</span>${bellHtml()}</span></div>
     <div class="search">🔍<input id="q" placeholder="${t("search")}" value="${esc(S._q||"")}"
       oninput="S._q=this.value;clearTimeout(window._st);window._st=setTimeout(()=>renderGridOnly(),250)"></div>
   </div>
+  <div id="reorderbanner"></div>
   <div class="cats">
     <div class="cat ${!S.category?'active':''}" onclick="setCat(null)"><div class="ic">🐾</div><div class="lb">${t("all")}</div></div>
     ${CATS.map(([k,e,l])=>`<div class="cat ${S.category===k?'active':''}" onclick="setCat('${k}')">
       <div class="ic">${e}</div><div class="lb">${l}</div></div>`).join("")}
   </div>
   <div id="grid" class="grid">${list.map(pcard).join("")||`<p class="muted" style="padding:20px">Məhsul tapılmadı.</p>`}</div>`;
+  loadReorderBanner();
+}
+
+// ---- Zeng / bildirisler ----
+function bellHtml(){
+  const b=S.unread?`<span style="position:absolute;top:-6px;right:-8px;background:var(--price);color:#fff;font-size:10px;min-width:16px;height:16px;line-height:16px;border-radius:8px;padding:0 4px;font-weight:700">${S.unread>9?"9+":S.unread}</span>`:"";
+  return `<button onclick="go('notifs')" style="background:none;border:0;color:#fff;font-size:20px;position:relative;cursor:pointer;padding:0">🔔${b}</button>`;
+}
+async function refreshUnread(){const r=await api("/notifications/unread_count/");if(r.ok)S.unread=r.data.count;}
+async function renderNotifs(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('home')">‹</button><span>🔔 Bildirişlər</span><span></span></div></div>
+    <div id="nl" class="wrap"><p class="muted">Yüklənir...</p></div>`;
+  const list=await apiAll("/notifications/");
+  await api("/notifications/read_all/",{method:"POST"}); S.unread=0;
+  el("nl").innerHTML=list.length?list.map(n=>`
+    <div class="card" style="margin:10px 0;${n.is_read?'':'border-left:4px solid var(--brand)'}">
+      <b>${esc(n.title)}</b>
+      ${n.body?`<div class="muted" style="margin-top:2px">${esc(n.body)}</div>`:""}
+      <div class="muted" style="font-size:11px;margin-top:5px">${new Date(n.created_at).toLocaleString("az")}</div>
+      ${n.kind==="REORDER"&&n.product?`<button class="btn" style="margin-top:8px" onclick="openProduct(${n.product})">Yenilə</button>`:""}
+    </div>`).join(""):`<div class="empty"><div class="big">🔔</div><p>Hələ bildiriş yoxdur.<br>Sifariş verəndə burada görəcəksən.</p></div>`;
+}
+async function loadReorderBanner(){
+  const box=el("reorderbanner"); if(!box)return;
+  const r=await api("/reorder-suggestions/");
+  if(!r.ok||!r.data||!r.data.length){box.innerHTML="";return;}
+  box.innerHTML=r.data.slice(0,2).map(s=>`
+    <div class="card" style="margin:10px 12px;border:1.5px solid var(--brand);background:#fff7f2">
+      <b>⏳ ${esc(s.pet||"Heyvanın")} üçün yem azalır</b>
+      <div class="muted" style="margin:3px 0 8px">'${esc(s.product)}' təxminən ${s.days_left} gündən bitəcək.</div>
+      <button class="btn" onclick="openProduct(${s.product_id})">Yenilə — ${esc(s.price_azn)}</button>
+    </div>`).join("");
 }
 function renderGridOnly(){ // yalniz grid-i yenile (axtaris zamani fokus itmesin)
   const q=(S._q||"").toLowerCase();let list=S.products.slice();
@@ -499,7 +533,7 @@ async function checkout(){
     await api(`/orders/${r.data.id}/hold_payment/`,{method:"POST"}); // escrow
     created.push(r.data.id);
   }
-  S.cart={};S.pay={created};S.view="paydone";renderNav();renderPayDone(el("root"));
+  S.cart={};S.pay={created};await refreshUnread();S.view="paydone";renderNav();renderPayDone(el("root"));
 }
 function renderPayDone(r){
   r.innerHTML=`<div class="top"><div class="brand"><span>Təsdiqləndi</span></div></div>
@@ -654,12 +688,14 @@ async function boot(){
   else return;  // server elcatan deyil — cixis ETME, token qalsin
   S.products=await apiAll("/products/");
   S.markets=await apiAll("/markets/");
+  await refreshUnread();
 }
 // 'triageview' üçün render əlavəsi
 const _origRender=render;
 render=async function(){
   if(S.view==="triageview"){renderNav();return renderTriageView(el("root"));}
   if(S.view==="subsview"){renderNav();return renderSubsView(el("root"));}
+  if(S.view==="notifs"){renderNav();return renderNotifs(el("root"));}
   if(S.view==="paydone"){renderNav();return renderPayDone(el("root"));}
   return _origRender();
 };
