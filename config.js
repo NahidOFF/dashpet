@@ -1,1 +1,1 @@
-window.DASHPET_API="https://flashers-passengers-lives-cable.trycloudflare.com";
+window.DASHPET_API="https://headquarters-pieces-mineral-contacting.trycloudflare.com";
