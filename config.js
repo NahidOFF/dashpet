@@ -1,1 +1,1 @@
-window.DASHPET_API="https://perfectly-starts-was-tags.trycloudflare.com";
+window.DASHPET_API="https://flashers-passengers-lives-cable.trycloudflare.com";

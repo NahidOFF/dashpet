@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>DashPet</title>
-<script src="config.js"></script>
+<script src="config.js?v=1783063507"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -132,16 +132,25 @@ const I18N={
 };
 const t=k=>(I18N[LANG.get()]||I18N.az)[k]||k;
 
+const OFFLINE_MSG="Serverə qoşulmaq olmur. Bir neçə dəqiqə sonra yenidən yoxla — server yenilənir ola bilər. 🐾";
 async function api(path,opts={}){
   const h={"Content-Type":"application/json"};
   if(T.get()) h["Authorization"]="Token "+T.get();
-  const r=await fetch(API+path,{headers:h,...opts});
-  let d=null; try{d=await r.json();}catch(e){}
-  return {ok:r.ok,status:r.status,data:d};
+  try{
+    const r=await fetch(API+path,{headers:h,...opts});
+    let d=null; try{d=await r.json();}catch(e){}
+    return {ok:r.ok,status:r.status,data:d};
+  }catch(e){
+    // Server elcatan deyil (tunel/komputer sonulu) — duyme "olu" qalmasin,
+    // aciq mesaj qaytaraq.
+    return {ok:false,status:0,data:{detail:OFFLINE_MSG}};
+  }
 }
 async function apiAll(path){ // sehifelenmis siyahilari tam yigir
   let url=API+path, out=[]; const h={}; if(T.get())h["Authorization"]="Token "+T.get();
-  while(url){ const r=await fetch(url,{headers:h}); const d=await r.json(); out=out.concat(d.results||[]); url=d.next; }
+  try{
+    while(url){ const r=await fetch(url,{headers:h}); const d=await r.json(); out=out.concat(d.results||[]); url=d.next; }
+  }catch(e){}
   return out;
 }
 const azn=q=>(q/100).toFixed(2)+" ₼";
@@ -565,7 +574,9 @@ async function doTriage(){
 // ================= Başlanğıc =================
 async function boot(){
   const me=await api("/auth/me/");
-  if(me.ok)S.user=me.data; else {T.clear();return;}
+  if(me.ok)S.user=me.data;
+  else if(me.status===401||me.status===403){T.clear();return;}  // token hequqeten kecersizdir
+  else return;  // server elcatan deyil — cixis ETME, token qalsin
   S.products=await apiAll("/products/");
   S.markets=await apiAll("/markets/");
 }
