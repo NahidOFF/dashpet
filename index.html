@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>DashPet</title>
-<script src="config.js?v=1783063507"></script>
+<script src="config.js?v=1783065585"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -375,6 +375,8 @@ function renderProduct(r){
       </div>
       <div style="margin-top:10px"><span class="tag">${p.category}</span> <span class="tag">Stok: ${p.stock_qty}</span></div>
       <div style="margin-top:12px"><button class="btn" onclick="addCart(${p.id})">🛒 ${t("add")}</button></div>
+      <div style="margin-top:8px"><button class="btn ghost" onclick="subBtn(${p.id})">📦 Aylıq abunə ol, hər ay qapında olsun!${S.user&&S.user.is_subscriber?" (pulsuz)":""}</button></div>
+      <div id="subpanel"></div>
     </div>
     <div class="card">
       <h2 style="margin:0 0 6px">${t("comments")}</h2>
@@ -395,7 +397,36 @@ function toast(msg){
   let x=el("_toast"); if(!x){x=document.createElement("div");x.id="_toast";
     x.style.cssText="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2b2a26;color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;z-index:50;";
     document.body.appendChild(x);}
-  x.textContent=msg;x.style.opacity="1";clearTimeout(window._tt);window._tt=setTimeout(()=>x.style.opacity="0",1200);
+  x.textContent=msg;x.style.opacity="1";clearTimeout(window._tt);window._tt=setTimeout(()=>x.style.opacity="0",1800);
+}
+
+// ---- Abunelik (1.50 AZN abunecilik + mehsula ayliq abune) ----
+function subBtn(pid){
+  if(S.user&&S.user.is_subscriber){doProductSub(pid);return;}
+  const box=el("subpanel"); if(!box)return;
+  box.innerHTML=`
+    <div class="card" style="margin:10px 0;border:1.5px solid var(--brand)">
+      <b>İstədiyin məhsula abunə ol, hər ay sifariş vermədən qapında olsun!</b>
+      <p class="muted" style="margin:8px 0">Birdəfəlik abunəçilik haqqı: <b>1.50 ₼</b>. Sonra istənilən məhsula abunə <b>pulsuzdur</b> — hər ay avtomatik sifariş olunub qapına gətirilir. İstədiyin vaxt ləğv edə bilərsən.</p>
+      <button class="btn" onclick="doActivateSub(${pid})">Abunəçi ol — 1.50 ₼</button>
+      <div id="submsg"></div>
+    </div>`;
+}
+async function doActivateSub(pid){
+  el("submsg").innerHTML=`<p class="muted">Ödənilir...</p>`;
+  const r=await api("/subscribe-platform/",{method:"POST"});
+  if(!r.ok){el("submsg").innerHTML=`<p class="err">${esc(r.data?.detail||"Xəta baş verdi.")}</p>`;return;}
+  S.user.is_subscriber=true;
+  toast("Abunəçilik aktivdir ✓");
+  await doProductSub(pid);
+}
+async function doProductSub(pid){
+  const p=findP(pid); if(!p)return;
+  const body=JSON.stringify({market:p.market,interval:"MONTHLY",
+    delivery_address:"Bakı-Sumqayıt",items:[{product:pid,quantity:1}]});
+  const r=await api("/subscriptions/",{method:"POST",body});
+  if(r.ok){toast("Abunə olundu! Hər ay qapında 📦");render();}
+  else{const box=el("subpanel");if(box)box.innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;}
 }
 
 // ================= Səbət =================
@@ -522,7 +553,8 @@ function renderSettings(r){
       <button class="${L2==='ru'?'active':''}" onclick="setLang('ru')">Русский</button>
     </div></div>
     <h2>${t("myorders")}</h2>
-    <div class="set-row"><div class="faq-q" onclick="go('orders')"><span>📦 ${t("myorders")}</span><span>›</span></div></div>
+    <div class="set-row"><div class="faq-q" onclick="go('orders')"><span>🧾 ${t("myorders")}</span><span>›</span></div></div>
+    <div class="set-row"><div class="faq-q" onclick="go('subsview')"><span>📦 Abunəliklərim${S.user&&S.user.is_subscriber?" ✓":""}</span><span>›</span></div></div>
     <div class="set-row"><div class="faq-q" onclick="go('triageview')"><span>🩺 ${t("triage")}</span><span>›</span></div></div>
     <h2>${t("cs")}</h2>
     ${FAQ.map((f,i)=>`<div class="set-row"><div class="faq-q" onclick="toggleFaq(${i})">
@@ -550,25 +582,54 @@ const FAQ=[
   ["AI köməkçi diaqnoz qoyur?","Xeyr. O yalnız təcililik səviyyəsini qiymətləndirir (triaj) və lazım olsa vetə yönləndirir — diaqnoz və dərman vermir."],
 ];
 
+// ================= Abunəliklərim =================
+async function renderSubsView(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>📦 Abunəliklərim</span><span></span></div></div>
+    <div class="wrap"><p class="muted" style="margin:4px 2px 0">İstədiyin məhsula abunə ol, hər ay sifariş vermədən qapında olsun!</p>
+    <div id="ss"><p class="muted">Yüklənir...</p></div></div>`;
+  const list=await apiAll("/subscriptions/");
+  el("ss").innerHTML=list.length?list.map(s=>{
+    const items=(s.items||[]).map(i=>`${i.quantity}× ${esc(i.product_name)}`).join(", ");
+    return `<div class="card" style="margin:10px 0">
+      <div class="row"><b>${items||"Abunəlik #"+s.id}</b><span class="tag">${esc(s.status_display)}</span></div>
+      <div class="muted">${esc(s.interval_display)} · növbəti: ${esc(s.next_charge_date||"—")}</div>
+      ${s.status==="ACTIVE"?`<button class="btn ghost" style="margin-top:8px" onclick="cancelSub(${s.id})">Ləğv et</button>`:""}
+    </div>`;
+  }).join(""):`<div class="empty"><div class="big">📦</div><p>Hələ abunəliyin yoxdur.<br>Məhsul səhifəsindəki "Aylıq abunə" düyməsindən başla!</p></div>`;
+}
+async function cancelSub(id){
+  const r=await api(`/subscriptions/${id}/cancel/`,{method:"POST"});
+  if(r.ok){toast("Abunəlik ləğv olundu");renderSubsView(el("root"));}
+  else toast(r.data?.detail||"Xəta");
+}
+
 // ================= AI Triaj (Settings-dən) =================
 async function renderTriageView(r){
   r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>${t("triage")}</span><span></span></div></div>
   <div class="wrap"><div class="card">
-    <p class="muted">Heyvanının vəziyyətini yaz. Bu <b>diaqnoz deyil</b> — yalnız istiqamətdir.</p>
-    <textarea class="f" id="tq" rows="3" placeholder="Məs: pişiyim bu gün yeməkdən imtina edir"></textarea>
+    <p class="muted">Heyvanın sağlamlığı, yemi və əşyaları haqqında soruş. Bu <b>diaqnoz deyil</b> — yalnız istiqamətdir.</p>
+    <textarea class="f" id="tq" rows="3" placeholder="Məs: pişiyim qusur / itim ayda nə qədər yem yeyir? (çəkisi 20 kq) / quş üçün qəfəs təklif et"></textarea>
     <button class="btn" onclick="doTriage()">Soruş</button>
     <div id="tr"></div>
-  </div></div>`;
+  </div><div id="tprodwrap"></div></div>`;
 }
 async function doTriage(){
   el("tr").innerHTML=`<p class="muted">Düşünülür...</p>`;
+  el("tprodwrap").innerHTML="";
   const r=await api("/triage/",{method:"POST",body:JSON.stringify({message:el("tq").value})});
-  if(!r.ok){el("tr").innerHTML=`<p class="err">${r.data.detail||JSON.stringify(r.data)}</p>`;return;}
+  if(!r.ok){el("tr").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;return;}
   const d=r.data;
   el("tr").innerHTML=`<div style="margin-top:12px" class="pill u-${esc(d.urgency)}">${esc(d.urgency)}${d.vet_now?" · DƏRHAL VETƏ":""}</div>
     <p style="margin:10px 0 4px"><b>${esc(d.summary)}</b></p><p>${esc(d.recommended_action)}</p>
     ${d.red_flags.length?`<p class="err">⚠ ${d.red_flags.map(esc).join(", ")}</p>`:""}
     <p class="muted" style="margin-top:8px">${esc(d.disclaimer)}</p>`;
+  if(d.suggested_products&&d.suggested_products.length){
+    el("tprodwrap").innerHTML=`<h2 style="margin:14px 2px 6px">🛍 Sənə uyğun məhsullar</h2><div class="grid" style="padding:4px 0" id="tprods"></div>`;
+    el("tprods").innerHTML=d.suggested_products.map(x=>{
+      const p=findP(x.id);
+      return p?pcard(p):`<div class="card"><b>${esc(x.name)}</b><div class="muted">${esc(x.market)}</div><div class="pprice">${esc(x.price_azn)}</div></div>`;
+    }).join("");
+  }
 }
 
 // ================= Başlanğıc =================
@@ -584,6 +645,7 @@ async function boot(){
 const _origRender=render;
 render=async function(){
   if(S.view==="triageview"){renderNav();return renderTriageView(el("root"));}
+  if(S.view==="subsview"){renderNav();return renderSubsView(el("root"));}
   if(S.view==="paydone"){renderNav();return renderPayDone(el("root"));}
   return _origRender();
 };
