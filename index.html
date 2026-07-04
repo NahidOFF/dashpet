@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>DashPet</title>
-<script src="config.js?v=1783114450"></script>
+<script src="config.js?v=1783148400"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -529,8 +529,10 @@ async function checkout(){
     const body=JSON.stringify({market:+mid,delivery_address:"Bakı-Sumqayıt",
       items:items.map(c=>({product:c.p.id,quantity:c.qty}))});
     const r=await api("/orders/",{method:"POST",body});
-    if(!r.ok){el("cmsg").innerHTML=`<p class="err">${JSON.stringify(r.data)}</p>`;return;}
-    await api(`/orders/${r.data.id}/hold_payment/`,{method:"POST"}); // escrow
+    if(!r.ok){el("cmsg").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;return;}
+    // Escrow tutmasi UGURLU olmasa, yalandan "odenildi" DEME.
+    const h=await api(`/orders/${r.data.id}/hold_payment/`,{method:"POST"});
+    if(!h.ok){el("cmsg").innerHTML=`<p class="err">Ödəniş alınmadı: ${esc(h.data?.detail||"server cavab vermədi")}. Sifariş #${r.data.id} gözləmədə saxlanıldı.</p>`;return;}
     created.push(r.data.id);
   }
   S.cart={};S.pay={created};await refreshUnread();S.view="paydone";renderNav();renderPayDone(el("root"));

@@ -1,1 +1,1 @@
-window.DASHPET_API="https://meaning-boom-now-wallet.trycloudflare.com";
+window.DASHPET_API="https://banner-judge-floral-ecommerce.trycloudflare.com";
