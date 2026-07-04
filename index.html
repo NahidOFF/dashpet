@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>DashPet</title>
-<script src="config.js?v=1783165603"></script>
+<script src="config.js?v=1783167136"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -173,7 +173,11 @@ const el=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 // --- Heyvan növü / şəkil (emoji) — mehsul adindan cixarilir ---
-function species(name){
+function species(name,petType){
+  // Satici heyvan novu secibse (pet_type) ondan istifade et — daha etibarli.
+  const M={DOG:{e:"🐕",k:"dog",bg:"#eaf1fb"},CAT:{e:"🐱",k:"cat",bg:"#f7efe4"},
+    BIRD:{e:"🐦",k:"bird",bg:"#eaf6ee"},FISH:{e:"🐟",k:"fish",bg:"#e7f3f7"},OTHER:{e:"🐾",k:"other",bg:"#f2ede4"}};
+  if(petType&&M[petType])return M[petType];
   const n=name.toLowerCase();
   if(n.includes("dovsan"))return{e:"🐰",k:"other",bg:"#f0ecf7"};
   if(n.includes("tisbaga"))return{e:"🐢",k:"other",bg:"#eaf5ec"};
@@ -328,7 +332,7 @@ async function doReset(){
 // ================= Home =================
 function marketName(id){const m=S.markets.find(x=>x.id===id);return m?m.name:"";}
 function pcard(p){
-  const sp=species(p.name);
+  const sp=species(p.name,p.pet_type);
   return `<div class="pcard" onclick="openProduct(${p.id})">
     <div class="pimg" style="background:${sp.bg}">${sp.e}
       ${sponsored(p.id)?`<span class="spons">${t("sponsored")}</span>`:""}</div>
@@ -343,7 +347,7 @@ const CATS=[["dog","🐕","İt"],["cat","🐱","Pişik"],["bird","🐦","Quş"],
 function renderHome(r){
   const q=(S._q||"").toLowerCase();
   let list=S.products.filter(p=>p.is_active!==false);
-  if(S.category)list=list.filter(p=>species(p.name).k===S.category);
+  if(S.category)list=list.filter(p=>species(p.name,p.pet_type).k===S.category);
   if(q)list=list.filter(p=>p.name.toLowerCase().includes(q));
   r.innerHTML=`
   <div class="top">
@@ -394,7 +398,7 @@ async function loadReorderBanner(){
 }
 function renderGridOnly(){ // yalniz grid-i yenile (axtaris zamani fokus itmesin)
   const q=(S._q||"").toLowerCase();let list=S.products.slice();
-  if(S.category)list=list.filter(p=>species(p.name).k===S.category);
+  if(S.category)list=list.filter(p=>species(p.name,p.pet_type).k===S.category);
   if(q)list=list.filter(p=>p.name.toLowerCase().includes(q));
   const g=el("grid"); if(g)g.innerHTML=list.map(pcard).join("")||`<p class="muted" style="padding:20px">Məhsul tapılmadı.</p>`;
 }
@@ -405,9 +409,9 @@ function openProduct(id){S.pid=id;S.view="product";window.scrollTo(0,0);render()
 function findP(id){return S.products.find(p=>p.id===id);}
 function renderProduct(r){
   const p=findP(S.pid); if(!p){go("home");return;}
-  const sp=species(p.name);
+  const sp=species(p.name,p.pet_type);
   const like=S.products.filter(x=>x.id!==p.id).slice(0,4);
-  const sim=S.products.filter(x=>x.id!==p.id&&species(x.name).k===sp.k).slice(0,4);
+  const sim=S.products.filter(x=>x.id!==p.id&&species(x.name,x.pet_type).k===sp.k).slice(0,4);
   const cs=comments(p.id);
   r.innerHTML=`
   <div class="top"><div class="brand"><button class="back" onclick="go('home')">‹</button><span>${esc(p.name)}</span><span></span></div></div>
@@ -487,7 +491,7 @@ function renderCart(r){
   r.innerHTML=`
   <div class="top"><div class="brand"><span>${t("card")}</span><span class="loc">${cartCount()} məhsul</span></div></div>
   <div style="padding-top:6px">
-    ${items.map(c=>{const sp=species(c.p.name);return `
+    ${items.map(c=>{const sp=species(c.p.name,c.p.pet_type);return `
       <div class="citem">
         <div class="ci" style="background:${sp.bg}">${sp.e}</div>
         <div style="flex:1">
@@ -597,6 +601,8 @@ function renderSettings(r){
   const L2=LANG.get();
   r.innerHTML=`<div class="top"><div class="brand"><span>${t("settings")}</span></div></div>
   <div class="wrap">
+    <h2>Satıcı</h2>
+    <div class="set-row" style="border:1.5px solid var(--brand)"><div class="faq-q" onclick="go('seller')"><span>🏪 Mağazam / Məhsul sat</span><span>›</span></div></div>
     <h2>${t("language")}</h2>
     <div class="set-row"><div class="lang">
       <button class="${L2==='az'?'active':''}" onclick="setLang('az')">Azərbaycanca</button>
@@ -654,6 +660,132 @@ async function cancelSub(id){
   else toast(r.data?.detail||"Xəta");
 }
 
+// ================= SATICI (Mağazam) =================
+var NEWPET="DOG";
+const PETOPTS=[["DOG","🐕","İt"],["CAT","🐱","Pişik"],["BIRD","🐦","Quş"],["FISH","🐟","Balıq"],["OTHER","🐾","Digər"]];
+const CATOPTS=[["FOOD","Yem"],["VITAMIN","Vitamin"],["ACCESSORY","Aksesuar"],["TOY","Oyuncaq"],["OTHER","Digər"]];
+
+async function renderSeller(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>🏪 Mağazam</span><span></span></div></div>
+    <div id="sl" class="wrap"><p class="muted">Yüklənir...</p></div>`;
+  const res=await api("/seller/shop/");
+  S.shop=res.ok?res.data.shop:null;
+  if(!S.shop){renderShopCreate();return;}
+  const [pr,or,ea]=await Promise.all([apiAll("/seller/products/"),api("/seller/orders/"),api("/seller/earnings/")]);
+  const ocount=(or.ok&&or.data)?or.data.length:0; const e=(ea.ok&&ea.data)?ea.data:{};
+  el("sl").innerHTML=`
+    <div class="card"><b>${esc(S.shop.name)}</b><div class="muted">${esc(S.shop.address)}</div></div>
+    <button class="btn" style="font-size:17px;padding:16px" onclick="go('addproduct')">➕ Yeni məhsul əlavə et</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 12px 0">
+      <div class="card" style="text-align:center;cursor:pointer;margin:0" onclick="go('myproducts')"><div style="font-size:26px">📦</div><b>${pr.length}</b><div class="muted">Məhsul</div></div>
+      <div class="card" style="text-align:center;cursor:pointer;margin:0" onclick="go('sellerorders')"><div style="font-size:26px">🧾</div><b>${ocount}</b><div class="muted">Sifariş</div></div>
+    </div>
+    <div class="card" style="background:#eefaf0;border-color:var(--ok)">
+      <div class="row"><span>💰 Alacağın (indi)</span><b style="color:var(--ok);font-size:20px">${esc(e.payable_azn||"0.00 AZN")}</b></div>
+      <div class="row muted" style="margin-top:4px"><span>Ümumi satış</span><span>${esc(e.total_sales_azn||"—")}</span></div>
+      <div class="row muted"><span>Çatdırılmış sifariş</span><span>${e.delivered_count||0}</span></div>
+    </div>`;
+}
+function renderShopCreate(){
+  el("sl").innerHTML=`
+    <h2>Mağaza aç 🏪</h2>
+    <div class="card">
+      <p class="muted">Bir dəqiqəyə mağazanı aç və məhsul satmağa başla!</p>
+      <input class="f" id="shname" placeholder="Mağazanın adı (məs: Elvinin Zoomarketi)">
+      <input class="f" id="shaddr" placeholder="Ünvan (məs: Bakı, Nəsimi r.)">
+      <input class="f" id="shphone" placeholder="Telefon (məs: +994701112233)">
+      <label>Zona</label>
+      <select class="f" id="shzone"><option value="BAKU">Bakı</option><option value="SUMQAYIT">Sumqayıt</option></select>
+      <div id="shmsg"></div>
+      <button class="btn" onclick="doCreateShop()">Mağaza aç</button>
+    </div>`;
+}
+async function doCreateShop(){
+  if(!el("shname").value.trim()||!el("shaddr").value.trim()){el("shmsg").innerHTML=`<p class="err">Ad və ünvan tələb olunur.</p>`;return;}
+  const body=JSON.stringify({name:el("shname").value,address:el("shaddr").value,phone:el("shphone").value,zone:el("shzone").value});
+  const r=await api("/seller/shop/",{method:"POST",body});
+  if(r.ok){S.shop=r.data;toast("Mağaza açıldı 🎉");render();}
+  else el("shmsg").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;
+}
+function pickPet(k){NEWPET=k;PETOPTS.forEach(([kk])=>{const x=el("pp"+kk);if(x){x.style.borderColor=kk===k?"var(--brand)":"var(--line)";x.style.background=kk===k?"#fff3ec":"#fff";}});}
+async function renderAddProduct(r){
+  NEWPET="DOG";
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('seller')">‹</button><span>➕ Yeni məhsul</span><span></span></div></div>
+  <div class="wrap"><div class="card">
+    <label>Hansı heyvan üçün?</label>
+    <div style="display:flex;gap:6px;margin:6px 0 12px">${PETOPTS.map(([k,e,l])=>`<div onclick="pickPet('${k}')" id="pp${k}" style="flex:1;text-align:center;padding:8px 0;border:1.5px solid var(--line);border-radius:12px;cursor:pointer"><div style="font-size:22px">${e}</div><div style="font-size:11px">${l}</div></div>`).join("")}</div>
+    <label>Məhsulun adı</label>
+    <input class="f" id="npname" placeholder="Məs: Royal Canin quru yem 4kg">
+    <label>Kateqoriya</label>
+    <select class="f" id="npcat">${CATOPTS.map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select>
+    <label>Qiymət (AZN)</label>
+    <input class="f" id="npprice" inputmode="decimal" placeholder="Məs: 35.50">
+    <label>Stok (neçə ədəd var)</label>
+    <input class="f" id="npstock" inputmode="numeric" value="10">
+    <div id="npmsg"></div>
+    <button class="btn" onclick="doAddProduct()">Əlavə et</button>
+  </div></div>`;
+  pickPet("DOG");
+}
+async function doAddProduct(){
+  const price=Math.round(parseFloat((el("npprice").value||"0").replace(",","."))*100);
+  const stock=parseInt(el("npstock").value||"0",10);
+  if(!el("npname").value.trim()){el("npmsg").innerHTML=`<p class="err">Ad daxil edin.</p>`;return;}
+  if(!price||price<=0){el("npmsg").innerHTML=`<p class="err">Düzgün qiymət daxil edin.</p>`;return;}
+  const body=JSON.stringify({name:el("npname").value,category:el("npcat").value,pet_type:NEWPET,
+    price_qepik:price,stock_qty:isNaN(stock)?0:stock});
+  const r=await api("/seller/products/",{method:"POST",body});
+  if(r.ok){toast("Məhsul əlavə olundu ✓");go("myproducts");}
+  else el("npmsg").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;
+}
+async function renderMyProducts(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('seller')">‹</button><span>📦 Məhsullarım</span><span></span></div></div>
+    <div class="wrap"><button class="btn" onclick="go('addproduct')">➕ Yeni məhsul</button><div id="mp" style="margin-top:10px"><p class="muted">Yüklənir...</p></div></div>`;
+  const list=await apiAll("/seller/products/");
+  el("mp").innerHTML=list.length?list.map(p=>{
+    const sp=species(p.name,p.pet_type);
+    return `<div class="card" style="margin:10px 0">
+      <div class="row"><b>${sp.e} ${esc(p.name)}</b><span class="tag">${p.is_active?"Aktiv":"Gizli"}</span></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <div style="flex:1"><label style="font-size:11px">Qiymət (AZN)</label><input class="f" style="margin:2px 0 0" id="ep${p.id}" inputmode="decimal" value="${(p.price_qepik/100).toFixed(2)}"></div>
+        <div style="flex:1"><label style="font-size:11px">Stok</label><input class="f" style="margin:2px 0 0" id="es${p.id}" inputmode="numeric" value="${p.stock_qty}"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn" style="flex:1" onclick="saveProd(${p.id})">Yadda saxla</button>
+        <button class="sso" style="flex:0 0 auto" onclick="toggleProd(${p.id},${p.is_active?'false':'true'})">${p.is_active?"Gizlət":"Göstər"}</button>
+        <button class="sso" style="flex:0 0 auto;color:var(--danger)" onclick="delProd(${p.id})">Sil</button>
+      </div>
+    </div>`;
+  }).join(""):`<div class="empty"><div class="big">📦</div><p>Hələ məhsulun yoxdur.<br>"Yeni məhsul" ilə başla!</p></div>`;
+}
+async function saveProd(id){
+  const price=Math.round(parseFloat((el("ep"+id).value||"0").replace(",","."))*100);
+  const stock=parseInt(el("es"+id).value||"0",10);
+  if(!price||price<=0){toast("Düzgün qiymət yaz");return;}
+  const r=await api(`/seller/products/${id}/`,{method:"PATCH",body:JSON.stringify({price_qepik:price,stock_qty:isNaN(stock)?0:stock})});
+  if(r.ok){toast("Yadda saxlanıldı ✓");renderMyProducts(el("root"));}else toast(r.data?.detail||"Xəta");
+}
+async function toggleProd(id,active){
+  const r=await api(`/seller/products/${id}/`,{method:"PATCH",body:JSON.stringify({is_active:active})});
+  if(r.ok)renderMyProducts(el("root"));else toast("Xəta");
+}
+async function delProd(id){
+  const r=await api(`/seller/products/${id}/`,{method:"DELETE"});
+  if(r.ok||r.status===204){toast("Silindi");renderMyProducts(el("root"));}else toast(r.data?.detail||"Silinmədi");
+}
+async function renderSellerOrders(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('seller')">‹</button><span>🧾 Sifarişlər</span><span></span></div></div><div id="so" class="wrap"><p class="muted">Yüklənir...</p></div>`;
+  const res=await api("/seller/orders/");
+  const list=(res.ok&&res.data)?res.data:[];
+  el("so").innerHTML=list.length?list.map(o=>`
+    <div class="card" style="margin:10px 0">
+      <div class="row"><b>Sifariş #${o.id}</b><span class="tag">${esc(o.status_display)}</span></div>
+      <div class="muted" style="margin-top:4px">${o.items.map(i=>esc(i.quantity+"× "+i.product)).join(", ")}</div>
+      <div class="muted" style="margin-top:4px">📍 ${esc(o.delivery_address)}</div>
+      <div class="row" style="margin-top:4px"><b>${esc(o.total_azn)}</b></div>
+    </div>`).join(""):`<div class="empty"><div class="big">🧾</div><p>Hələ sifariş yoxdur.<br>Məhsulların satılanda burada görəcəksən.</p></div>`;
+}
+
 // ================= AI Triaj (Settings-dən) =================
 async function renderTriageView(r){
   r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>${t("triage")}</span><span></span></div></div>
@@ -699,6 +831,10 @@ render=async function(){
   if(S.view==="triageview"){renderNav();return renderTriageView(el("root"));}
   if(S.view==="subsview"){renderNav();return renderSubsView(el("root"));}
   if(S.view==="notifs"){renderNav();return renderNotifs(el("root"));}
+  if(S.view==="seller"){renderNav();return renderSeller(el("root"));}
+  if(S.view==="addproduct"){renderNav();return renderAddProduct(el("root"));}
+  if(S.view==="myproducts"){renderNav();return renderMyProducts(el("root"));}
+  if(S.view==="sellerorders"){renderNav();return renderSellerOrders(el("root"));}
   if(S.view==="paydone"){renderNav();return renderPayDone(el("root"));}
   return _origRender();
 };

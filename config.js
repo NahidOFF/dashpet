@@ -1,1 +1,1 @@
-window.DASHPET_API="https://important-enjoying-discipline-fibre.trycloudflare.com";
+window.DASHPET_API="https://entry-api-retrieved-nutrition.trycloudflare.com";
