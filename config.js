@@ -1,1 +1,1 @@
-window.DASHPET_API="https://banner-judge-floral-ecommerce.trycloudflare.com";
+window.DASHPET_API="https://important-enjoying-discipline-fibre.trycloudflare.com";

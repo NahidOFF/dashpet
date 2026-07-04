@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>DashPet</title>
-<script src="config.js?v=1783148400"></script>
+<script src="config.js?v=1783165603"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -508,13 +508,14 @@ function renderCart(r){
   </div>`;
 }
 function chQty(id,d){const c=S.cart[id];if(!c)return;c.qty+=d;if(c.qty<=0)delete S.cart[id];render();}
-const DELIVERY=200; // 2.00 AZN (numune — sonra backend-e baglanacaq)
 function showPay(sub){
+  // Catdirilma hazirda PULSUZ (real haqq sonra backend-e baglananda elave olunacaq).
+  // Gosterilen Yekun tam olaraq tutulan mebleq ile eynidir (uygunsuzluq olmasin).
   el("paybox").innerHTML=`
     <div style="margin-top:12px;border-top:1px dashed var(--line);padding-top:10px">
       <div class="row"><span>${t("total")}</span><b>${azn(sub)}</b></div>
-      <div class="row muted" style="margin-top:4px"><span>+ ${t("delivery")}</span><span>${azn(DELIVERY)}</span></div>
-      <div class="row" style="margin-top:6px;font-size:18px"><b>Yekun</b><b style="color:var(--price)">${azn(sub+DELIVERY)}</b></div>
+      <div class="row muted" style="margin-top:4px"><span>${t("delivery")}</span><span style="color:var(--ok)">Pulsuz</span></div>
+      <div class="row" style="margin-top:6px;font-size:18px"><b>Yekun</b><b style="color:var(--price)">${azn(sub)}</b></div>
       <button class="btn" style="margin-top:10px" onclick="checkout()">${t("confirm")}</button>
       <div id="cmsg"></div>
     </div>`;
