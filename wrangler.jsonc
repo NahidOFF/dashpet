@@ -1,0 +1,10 @@
+{
+  // Cloudflare Workers — statik sayt (assets) konfiqurasiyasi.
+  // index.html + config.js repozitoriya kokunden birbasa verilir; qurma (build) addimi yoxdur.
+  "name": "dashpet",
+  "compatibility_date": "2025-01-01",
+  "assets": {
+    "directory": ".",
+    "not_found_handling": "single-page-application"
+  }
+}

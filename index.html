@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>DashPet</title>
+<title>Petekh</title>
 <script src="config.js?v=1783167136"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -104,15 +104,16 @@
 
 <script>
 // ================= Kicik kömekci =================
-// API unvani: GitHub Pages versiyasinda config.js DASHPET_API-ni tunel unvanina
+// API unvani: GitHub Pages versiyasinda config.js PETEKH_API-ni tunel unvanina
 // qurur; Django /app/ versiyasinda bos qalir (eyni server).
-window.DASHPET_API = window.DASHPET_API || "";
-var API = window.DASHPET_API + "/api";
+// (Kohne config.js hele DASHPET_API isledirse, geriye uyumluluq ucun onu da oxu.)
+window.PETEKH_API = window.PETEKH_API || window.DASHPET_API || "";
+var API = window.PETEKH_API + "/api";
 // OZUNU-SAGALTMA: tunel unvani deyisibse, tezesini birbasa GitHub-dakı
 // config-den tap (Pages qurulmasini gozlemeden) ve sorgunu tekrarla.
 const RAW_CFG = "https://raw.githubusercontent.com/NahidOFF/dashpet/main/config.js";
 async function refreshApiBase(){
-  if(!window.DASHPET_API) return false; // Django /app/ rejimi — eyni server
+  if(!window.PETEKH_API) return false; // Django /app/ rejimi — eyni server
   try{
     const txt = await (await fetch(RAW_CFG + "?t=" + Date.now(), {cache:"no-store"})).text();
     const m = txt.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/);
@@ -242,7 +243,7 @@ function renderAuth(r){
   if(AUTHV==="forgot1")return renderForgot1(r);
   if(AUTHV==="forgot2")return renderForgot2(r);
   r.innerHTML=`
-  <div class="top"><div class="brand"><span>🐾 DashPet</span></div></div>
+  <div class="top"><div class="brand"><span>🐾 Petekh</span></div></div>
   <div class="wrap">
     <h2>Giriş 🐾</h2>
     <div class="card">
@@ -351,7 +352,7 @@ function renderHome(r){
   if(q)list=list.filter(p=>p.name.toLowerCase().includes(q));
   r.innerHTML=`
   <div class="top">
-    <div class="brand"><span>🐾 DashPet</span>
+    <div class="brand"><span>🐾 Petekh</span>
       <span style="display:flex;align-items:center;gap:12px"><span class="loc">📍 Bakı–Sumqayıt</span>${bellHtml()}</span></div>
     <div class="search">🔍<input id="q" placeholder="${t("search")}" value="${esc(S._q||"")}"
       oninput="S._q=this.value;clearTimeout(window._st);window._st=setTimeout(()=>renderGridOnly(),250)"></div>
@@ -618,7 +619,7 @@ function renderSettings(r){
       <span>${f[0]}</span><span id="fi${i}">+</span></div><div class="faq-a" id="fa${i}">${f[1]}</div></div>`).join("")}
     <div style="height:14px"></div>
     <button class="btn ghost" style="margin:0 12px;width:calc(100% - 24px)" onclick="doLogout()">${t("signout")}</button>
-    <p class="muted" style="text-align:center;margin-top:14px">DashPet · Bakı–Sumqayıt 🐾</p>
+    <p class="muted" style="text-align:center;margin-top:14px">Petekh · Bakı–Sumqayıt 🐾</p>
   </div>`;
 }
 function setLang(l){LANG.set(l);render();}
