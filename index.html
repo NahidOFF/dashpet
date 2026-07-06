@@ -150,7 +150,7 @@ async function refreshApiBase(){
 }
 const T={get:()=>localStorage.getItem("token"),set:t=>localStorage.setItem("token",t),clear:()=>localStorage.removeItem("token")};
 const LANG={get:()=>localStorage.getItem("lang")||"az",set:l=>localStorage.setItem("lang",l)};
-var S={view:"home",user:null,products:[],markets:[],cart:{},category:null,pid:null,pay:null,unread:0};
+var S={view:"home",user:null,products:[],markets:[],cart:{},category:null,pid:null,pay:null,unread:0,pets:[]};
 
 // Dil lugeti (interfeys etiketleri). Mehsul adlari ve FAQ Azerbaycanca qalir.
 const I18N={
@@ -158,17 +158,17 @@ const I18N={
     add:"Səbətə at",buy:"Satın al",confirm:"Təsdiq et",total:"Cəm",delivery:"Çatdırılma haqqı",
     empty:"Səbətiniz boşdur",bought:"nəfər aldı",comments:"Şərhlər",also:"Bunları da bəyənə bilərsən",
     similar:"Oxşar məhsullar",signout:"Çıxış",cs:"Müştəri xidməti",language:"Dil",sponsored:"Sponsorlu",
-    all:"Hamısı",orders:"Sifarişlərim",triage:"AI Triaj",myorders:"Sifarişlərim"},
+    all:"Hamısı",orders:"Sifarişlərim",triage:"PetAI",myorders:"Sifarişlərim"},
   en:{home:"Home",card:"Cart",maps:"Map",settings:"Settings",search:"Search products…",
     add:"Add to cart",buy:"Buy",confirm:"Confirm",total:"Total",delivery:"Delivery fee",
     empty:"Your cart is empty",bought:"bought",comments:"Comments",also:"You might also like",
     similar:"Similar products",signout:"Sign out",cs:"Customer service",language:"Language",sponsored:"Sponsored",
-    all:"All",orders:"My orders",triage:"AI Triage",myorders:"My orders"},
+    all:"All",orders:"My orders",triage:"PetAI",myorders:"My orders"},
   ru:{home:"Главная",card:"Корзина",maps:"Карта",settings:"Настройки",search:"Поиск товаров…",
     add:"В корзину",buy:"Купить",confirm:"Подтвердить",total:"Итого",delivery:"Доставка",
     empty:"Корзина пуста",bought:"купили",comments:"Отзывы",also:"Вам может понравиться",
     similar:"Похожие товары",signout:"Выход",cs:"Поддержка",language:"Язык",sponsored:"Реклама",
-    all:"Все",orders:"Мои заказы",triage:"AI Триаж",myorders:"Мои заказы"},
+    all:"Все",orders:"Мои заказы",triage:"PetAI",myorders:"Мои заказы"},
 };
 const t=k=>(I18N[LANG.get()]||I18N.az)[k]||k;
 
@@ -367,7 +367,7 @@ async function doRegister(){
   const b=JSON.stringify({phone:ph,email:el("remail").value,
     password:el("rpw").value,name:el("rname").value});
   const r=await api("/auth/register/",{method:"POST",body:b});
-  if(r.ok){T.set(r.data.token);await boot();go("home");}
+  if(r.ok){T.set(r.data.token);await boot();S.showPetPrompt=true;go("home");}
   else showErr(r.data||"Xəta baş verdi.");
 }
 async function doLogin(){
@@ -409,6 +409,23 @@ function pcard(p){
     </div></div>`;
 }
 const CATS=[["dog","🐕","İt"],["cat","🐱","Pişik"],["bird","🐦","Quş"],["fish","🐟","Balıq"],["other","🐾","Digər"]];
+// "Sənə uyğun" — istifadəçinin heyvanlarına (növünə) görə tövsiyə bölməsi.
+// Acib-baglamaq istifadecinin elindedir (localStorage-da yadda qalir).
+function recToggle(){localStorage.setItem("rec_open",localStorage.getItem("rec_open")==="0"?"1":"0");render();}
+function recHtml(){
+  if(!S.pets||!S.pets.length)return "";
+  const types=[...new Set(S.pets.map(p=>(p.species||"").toLowerCase()))];
+  const recs=S.products.filter(p=>p.is_active!==false&&types.includes(species(p.name,p.pet_type).k)).slice(0,4);
+  if(!recs.length)return "";
+  const open=localStorage.getItem("rec_open")!=="0";
+  const names=S.pets.slice(0,2).map(p=>esc(p.name)).join(", ");
+  return `<div style="margin:2px 12px 0">
+    <div class="row" style="cursor:pointer" onclick="recToggle()">
+      <h2 style="margin:10px 2px 6px">✨ ${names} üçün seçdik</h2>
+      <span class="muted" style="font-size:13px">${open?"bağla ▾":"aç ▸"}</span></div>
+    ${open?`<div class="grid" style="padding:2px 0 6px">${recs.map(pcard).join("")}</div>`:""}
+  </div>`;
+}
 function renderHome(r){
   const q=(S._q||"").toLowerCase();
   let list=S.products.filter(p=>p.is_active!==false);
@@ -421,7 +438,17 @@ function renderHome(r){
     <div class="search">🔍<input id="q" placeholder="${t("search")}" value="${esc(S._q||"")}"
       oninput="S._q=this.value;clearTimeout(window._st);window._st=setTimeout(()=>renderGridOnly(),250)"></div>
   </div>
+  ${S.showPetPrompt?`
+  <div style="position:fixed;inset:0;background:rgba(46,50,64,.45);z-index:45;display:flex;align-items:center;justify-content:center" onclick="S.showPetPrompt=false;render()">
+    <div class="card" style="max-width:320px;width:88%;margin:0" onclick="event.stopPropagation()">
+      <div style="text-align:center;font-size:46px">🐾</div>
+      <h2 style="text-align:center;margin:6px 0">Heyvanını əlavə et</h2>
+      <p class="muted" style="text-align:center;margin:0 0 12px">Növünə və ölçüsünə uyğun məhsullar tövsiyə edək. Bu, tamamilə <b>istəyə bağlıdır</b>.</p>
+      <button class="btn" onclick="S.showPetPrompt=false;go('addpet')">Əlavə et 🐾</button>
+      <button class="alink" style="width:100%;margin-top:8px;text-align:center" onclick="S.showPetPrompt=false;render()">Sonra</button>
+    </div></div>`:""}
   <div id="reorderbanner"></div>
+  ${recHtml()}
   <div class="cats">
     <div class="cat ${!S.category?'active':''}" onclick="setCat(null)"><div class="ic">🐾</div><div class="lb">${t("all")}</div></div>
     ${CATS.map(([k,e,l])=>`<div class="cat ${S.category===k?'active':''}" onclick="setCat('${k}')">
@@ -662,6 +689,16 @@ function renderSettings(r){
   const L2=LANG.get();
   r.innerHTML=`<div class="top"><div class="brand"><span>${t("settings")}</span></div></div>
   <div class="wrap">
+    <div style="display:flex;flex-direction:column;align-items:center;margin:16px 0 8px">
+      <button onclick="go('triageview')" aria-label="PetAI" style="width:112px;height:112px;border-radius:50%;
+        border:4px solid #fff;cursor:pointer;font-size:40px;color:#fff;
+        background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);
+        box-shadow:0 8px 22px rgba(244,155,13,.45)">🐾</button>
+      <b style="font-family:'Poppins','Segoe UI',sans-serif;font-size:19px;margin-top:9px">PetAI</b>
+      <span class="muted" style="font-size:12px">Heyvanın üçün ağıllı köməkçi — soruş!</span>
+    </div>
+    <h2>Heyvanlarım</h2>
+    <div class="set-row"><div class="faq-q" onclick="go('mypets')"><span>🐾 My Pets${S.pets&&S.pets.length?` (${S.pets.length})`:""}</span><span>›</span></div></div>
     <h2>Satıcı</h2>
     <div class="set-row" style="border:1.5px solid var(--brand)"><div class="faq-q" onclick="go('seller')"><span>🏪 Mağazam / Məhsul sat</span><span>›</span></div></div>
     <h2>${t("language")}</h2>
@@ -673,7 +710,6 @@ function renderSettings(r){
     <h2>${t("myorders")}</h2>
     <div class="set-row"><div class="faq-q" onclick="go('orders')"><span>🧾 ${t("myorders")}</span><span>›</span></div></div>
     <div class="set-row"><div class="faq-q" onclick="go('subsview')"><span>📦 Abunəliklərim${S.user&&S.user.is_subscriber?" ✓":""}</span><span>›</span></div></div>
-    <div class="set-row"><div class="faq-q" onclick="go('triageview')"><span>🩺 ${t("triage")}</span><span>›</span></div></div>
     <h2>${t("cs")}</h2>
     ${FAQ.map((f,i)=>`<div class="set-row"><div class="faq-q" onclick="toggleFaq(${i})">
       <span>${f[0]}</span><span id="fi${i}">+</span></div><div class="faq-a" id="fa${i}">${f[1]}</div></div>`).join("")}
@@ -685,14 +721,14 @@ function renderSettings(r){
 function setLang(l){LANG.set(l);render();}
 function toggleFaq(i){const a=el("fa"+i),ic=el("fi"+i);const open=a.style.display==="block";
   a.style.display=open?"none":"block";ic.textContent=open?"+":"–";}
-async function doLogout(){await api("/auth/logout/",{method:"POST"});T.clear();S={view:"home",user:null,products:[],markets:[],cart:{}};go("home");}
+async function doLogout(){await api("/auth/logout/",{method:"POST"});T.clear();S={view:"home",user:null,products:[],markets:[],cart:{},pets:[]};go("home");}
 
 const FAQ=[
   ["Çatdırılma nə qədər vaxt aparır?","Bakı-Sumqayıt üzrə sifarişlər adətən seçdiyiniz zaman pəncərəsində (məs. bu gün 16:00–20:00) çatdırılır."],
   ["Ödənişi necə edə bilərəm?","Kartla ödəyirsiniz. Pul çatdırılma təsdiqlənənə qədər təhlükəsiz saxlanılır (escrow), sonra market payı avtomatik köçürülür."],
   ["Abunəlik necə işləyir?","Yem və ya qum üçün aylıq/həftəlik plan qurursunuz; saxlanmış kartla avtomatik tutulur və heyvanınızın adı ilə çatdırılır."],
   ["Məhsulu geri qaytara bilərəm?","Bəli. Çatdırılmadan əvvəl ləğv edə, çatdırıldıqdan sonra isə uyğun hallarda geri qaytarma tələb edə bilərsiniz."],
-  ["Baytar çağırışı var?","Heyvanınız pis olanda AI Triaj köməkçisi vəziyyəti qiymətləndirir və lazım olsa partnyor klinikaya yönləndirir."],
+  ["Baytar çağırışı var?","Heyvanınız pis olanda PetAI köməkçisi vəziyyəti qiymətləndirir və lazım olsa partnyor klinikaya yönləndirir."],
   ["Hansı zonalara çatdırırsınız?","Hazırda yalnız Bakı və Sumqayıt. Yeni zonalar tezliklə əlavə olunacaq."],
   ["Sifarişimi necə izləyə bilərəm?","'Sifarişlərim' bölməsindən statusu görürsünüz: ödəniş tutuldu, yolda, çatdırıldı."],
   ["Kart məlumatlarım təhlükəsizdir?","Bəli. Kart nömrəniz bizdə saxlanılmır — yalnız lisenziyalı ödəniş provayderinin təhlükəsiz yaddaşında olur."],
@@ -921,33 +957,113 @@ async function renderSellerOrders(r){
     </div>`).join(""):`<div class="empty"><div class="big">🧾</div><p>Hələ sifariş yoxdur.<br>Məhsulların satılanda burada görəcəksən.</p></div>`;
 }
 
-// ================= AI Triaj (Settings-dən) =================
-async function renderTriageView(r){
-  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>${t("triage")}</span><span></span></div></div>
-  <div class="wrap"><div class="card">
-    <p class="muted">Heyvanın sağlamlığı, yemi və əşyaları haqqında soruş. Bu <b>diaqnoz deyil</b> — yalnız istiqamətdir.</p>
-    <textarea class="f" id="tq" rows="3" placeholder="Məs: pişiyim qusur / itim ayda nə qədər yem yeyir? (çəkisi 20 kq) / quş üçün qəfəs təklif et"></textarea>
-    <button class="btn" onclick="doTriage()">Soruş</button>
-    <div id="tr"></div>
-  </div><div id="tprodwrap"></div></div>`;
+// ================= My Pets — heyvan profilləri =================
+function petEmoji(sp){const o=PETOPTS.find(([k])=>k===sp);return o?o[1]:"🐾";}
+async function loadPets(){const r=await apiAll("/pets/");S.pets=r||[];}
+async function renderMyPets(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>🐾 My Pets</span><span></span></div></div>
+    <div class="wrap"><button class="btn" onclick="go('addpet')">➕ Heyvan əlavə et</button>
+    <div id="petlist" style="margin-top:10px"><p class="muted">Yüklənir...</p></div></div>`;
+  await loadPets();
+  el("petlist").innerHTML=S.pets.length?S.pets.map(p=>`
+    <div class="card" style="margin:10px 0">
+      <div class="row"><b style="font-size:16px">${petEmoji(p.species)} ${esc(p.name)}</b>
+        <button class="alink" style="color:var(--danger)" onclick="delPet(${p.id})">Sil</button></div>
+      <div class="muted" style="margin-top:4px">
+        ${esc(p.breed||"Cins qeyd olunmayıb")}${p.weight_kg?` · ${p.weight_kg} kq`:""}${p.sex==="MALE"?" · Erkək":p.sex==="FEMALE"?" · Dişi":""}
+      </div>
+    </div>`).join(""):`<div class="empty"><div class="big">🐾</div><p>Hələ heyvan əlavə etməmisən.<br>Əlavə etsən, sənə uyğun məhsullar tövsiyə edərik!</p></div>`;
 }
-async function doTriage(){
-  el("tr").innerHTML=`<p class="muted">Düşünülür...</p>`;
-  el("tprodwrap").innerHTML="";
-  const r=await api("/triage/",{method:"POST",body:JSON.stringify({message:el("tq").value})});
-  if(!r.ok){el("tr").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;return;}
-  const d=r.data;
-  el("tr").innerHTML=`<div style="margin-top:12px" class="pill u-${esc(d.urgency)}">${esc(d.urgency)}${d.vet_now?" · DƏRHAL VETƏ":""}</div>
-    <p style="margin:10px 0 4px"><b>${esc(d.summary)}</b></p><p>${esc(d.recommended_action)}</p>
-    ${d.red_flags.length?`<p class="err">⚠ ${d.red_flags.map(esc).join(", ")}</p>`:""}
-    <p class="muted" style="margin-top:8px">${esc(d.disclaimer)}</p>`;
-  if(d.suggested_products&&d.suggested_products.length){
-    el("tprodwrap").innerHTML=`<h2 style="margin:14px 2px 6px">🛍 Sənə uyğun məhsullar</h2><div class="grid" style="padding:4px 0" id="tprods"></div>`;
-    el("tprods").innerHTML=d.suggested_products.map(x=>{
-      const p=findP(x.id);
-      return p?pcard(p):`<div class="card"><b>${esc(x.name)}</b><div class="muted">${esc(x.market)}</div><div class="pprice">${esc(x.price_azn)}</div></div>`;
-    }).join("");
-  }
+async function delPet(id){
+  const r=await api(`/pets/${id}/`,{method:"DELETE"});
+  if(r.ok||r.status===204){toast("Silindi");await loadPets();renderMyPets(el("root"));}
+  else toast("Silinmədi");
+}
+var NEWPETSP="DOG";
+function pickPetSp(k){NEWPETSP=k;PETOPTS.forEach(([kk])=>{const x=el("ps"+kk);if(x){x.style.borderColor=kk===k?"var(--brand)":"var(--line)";x.style.background=kk===k?"#fff3ec":"#fff";}});}
+function renderAddPet(r){
+  NEWPETSP="DOG";
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('mypets')">‹</button><span>➕ Heyvan əlavə et</span><span></span></div></div>
+  <div class="wrap"><div class="card">
+    <label>Növü</label>
+    <div style="display:flex;gap:6px;margin:6px 0 12px">${PETOPTS.map(([k,e,l])=>`<div onclick="pickPetSp('${k}')" id="ps${k}" style="flex:1;text-align:center;padding:8px 0;border:1.5px solid var(--line);border-radius:12px;cursor:pointer"><div style="font-size:22px">${e}</div><div style="font-size:11px">${l}</div></div>`).join("")}</div>
+    <label>Adı</label>
+    <input class="f" id="ptname" placeholder="Məs: Mestan">
+    <label>Cinsi (məcburi deyil)</label>
+    <input class="f" id="ptbreed" placeholder="Məs: Persian, Labrador...">
+    <label>Cinsiyyəti</label>
+    <select class="f" id="ptsex"><option value="UNKNOWN">Bilinmir</option><option value="MALE">Erkək</option><option value="FEMALE">Dişi</option></select>
+    <label>Çəkisi kq (məcburi deyil — ölçüsünə uyğun tövsiyə üçün)</label>
+    <input class="f" id="ptweight" inputmode="decimal" placeholder="Məs: 4.5">
+    <div id="ptmsg"></div>
+    <button class="btn" onclick="doAddPet()">Yadda saxla 🐾</button>
+  </div></div>`;
+  pickPetSp("DOG");
+}
+async function doAddPet(){
+  const name=el("ptname").value.trim();
+  if(!name){el("ptmsg").innerHTML=`<p class="err">Ad daxil edin.</p>`;return;}
+  const w=parseFloat((el("ptweight").value||"").replace(",","."));
+  const body=JSON.stringify({name,species:NEWPETSP,breed:el("ptbreed").value.trim(),
+    sex:el("ptsex").value,weight_kg:isNaN(w)?null:w});
+  const r=await api("/pets/",{method:"POST",body});
+  if(r.ok){toast("Əlavə olundu 🐾");await loadPets();go("mypets");}
+  else el("ptmsg").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;
+}
+
+// ================= PetAI — çat interfeysi (Settings-dən) =================
+var PETAI=[];
+try{PETAI=JSON.parse(localStorage.getItem("petai_chat")||"[]");}catch(e){PETAI=[];}
+function petaiSave(){try{localStorage.setItem("petai_chat",JSON.stringify(PETAI.slice(-40)));}catch(e){}}
+function petaiBubble(m){
+  if(m.role==="u")
+    return `<div style="display:flex;justify-content:flex-end;margin:6px 0">
+      <div style="background:var(--brand);color:#fff;padding:9px 13px;border-radius:16px 16px 4px 16px;max-width:80%;font-size:14px">${esc(m.text)}</div></div>`;
+  if(m.err)
+    return `<div style="display:flex;margin:6px 0"><div class="card" style="margin:0;max-width:85%;padding:10px 12px"><p class="err" style="margin:0">${esc(m.err)}</p></div></div>`;
+  const d=m.d;
+  const prods=(d.suggested_products||[]).slice(0,3).map(x=>
+    `<button class="alink" style="display:block;text-align:left" onclick="openProduct(${x.id})">🛍 ${esc(x.name)} — ${esc(x.price_azn)}</button>`).join("");
+  return `<div style="display:flex;margin:6px 0;gap:8px">
+    <div style="flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);display:flex;align-items:center;justify-content:center;font-size:15px">🐾</div>
+    <div class="card" style="margin:0;max-width:82%;padding:10px 12px">
+      <span class="pill u-${esc(d.urgency)}" style="font-size:11px">${esc(d.urgency)}${d.vet_now?" · DƏRHAL VETƏ":""}</span>
+      <p style="margin:8px 0 4px"><b>${esc(d.summary)}</b></p>
+      <p style="margin:0">${esc(d.recommended_action)}</p>
+      ${(d.red_flags||[]).length?`<p class="err" style="margin:6px 0 0">⚠ ${d.red_flags.map(esc).join(", ")}</p>`:""}
+      ${prods?`<div style="margin-top:6px;border-top:1px solid var(--line);padding-top:4px">${prods}</div>`:""}
+    </div></div>`;
+}
+function petaiChatHtml(){
+  const greet=`<div style="display:flex;margin:6px 0;gap:8px">
+    <div style="flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);display:flex;align-items:center;justify-content:center;font-size:15px">🐾</div>
+    <div class="card" style="margin:0;max-width:82%;padding:10px 12px">
+      <p style="margin:0"><b>Salam! Mən PetAI 🐾</b></p>
+      <p style="margin:6px 0 0">Heyvanının sağlamlığı, yemi, baxımı və əşyaları haqqında soruş. Bu, <b>diaqnoz deyil</b> — yalnız istiqamətdir.</p>
+    </div></div>`;
+  return greet+PETAI.map(petaiBubble).join("");
+}
+async function renderTriageView(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>🐾 PetAI</span>
+    <button class="alink" style="padding:0" onclick="PETAI=[];petaiSave();render()">Təmizlə</button></div></div>
+  <div id="chat" style="padding:12px 12px 8px">${petaiChatHtml()}</div>
+  <div style="position:fixed;bottom:66px;left:0;right:0;max-width:520px;margin:0 auto;background:#fff;border-top:1px solid var(--line);padding:8px 10px;display:flex;gap:8px;z-index:25">
+    <input class="f" id="tq" style="margin:0" placeholder="Heyvanın haqqında soruş..." onkeydown="if(event.key==='Enter')petaiSend()">
+    <button class="btn" style="width:auto;padding:0 18px" onclick="petaiSend()">➤</button>
+  </div><div style="height:70px"></div>`;
+  window.scrollTo(0,document.body.scrollHeight);
+}
+async function petaiSend(){
+  const inp=el("tq"); const q=(inp.value||"").trim(); if(!q)return;
+  inp.value="";
+  PETAI.push({role:"u",text:q});
+  el("chat").innerHTML=petaiChatHtml()+`<div style="display:flex;margin:6px 0;gap:8px"><div style="flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);display:flex;align-items:center;justify-content:center;font-size:15px">🐾</div><p class="muted" style="margin:6px 0">Düşünür...</p></div>`;
+  window.scrollTo(0,document.body.scrollHeight);
+  const r=await api("/triage/",{method:"POST",body:JSON.stringify({message:q})});
+  if(r.ok)PETAI.push({role:"a",d:r.data});
+  else PETAI.push({role:"a",err:r.data?.detail||"Xəta baş verdi. Yenidən yoxla."});
+  petaiSave();
+  const c=el("chat"); if(c){c.innerHTML=petaiChatHtml();window.scrollTo(0,document.body.scrollHeight);}
 }
 
 // ================= Başlanğıc =================
@@ -958,6 +1074,7 @@ async function boot(){
   else return;  // server elcatan deyil — cixis ETME, token qalsin
   S.products=await apiAll("/products/");
   S.markets=await apiAll("/markets/");
+  S.pets=await apiAll("/pets/");
   await refreshUnread();
 }
 // 'triageview' üçün render əlavəsi
@@ -967,6 +1084,8 @@ render=async function(){
   if(S.view==="subsview"){renderNav();return renderSubsView(el("root"));}
   if(S.view==="notifs"){renderNav();return renderNotifs(el("root"));}
   if(S.view==="shopview"){renderNav();return renderShopView(el("root"));}
+  if(S.view==="mypets"){renderNav();return renderMyPets(el("root"));}
+  if(S.view==="addpet"){renderNav();return renderAddPet(el("root"));}
   if(S.view==="seller"){renderNav();return renderSeller(el("root"));}
   if(S.view==="addproduct"){renderNav();return renderAddProduct(el("root"));}
   if(S.view==="myproducts"){renderNav();return renderMyProducts(el("root"));}
