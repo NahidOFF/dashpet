@@ -40,7 +40,8 @@
   /* Mehsul grid */
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 12px;}
   .pcard{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;}
-  .pimg{position:relative;height:120px;display:flex;align-items:center;justify-content:center;font-size:52px;}
+  .pimg{position:relative;height:120px;display:flex;align-items:center;justify-content:center;font-size:52px;overflow:hidden;}
+  .pimg img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;}
   .spons{position:absolute;top:6px;left:6px;background:#fff3e0;color:var(--brand-d);font-size:10px;
     font-weight:700;padding:2px 7px;border-radius:8px;border:1px solid #ffd9b3;}
   .pinfo{padding:8px 9px 10px;}
@@ -332,10 +333,11 @@ async function doReset(){
 
 // ================= Home =================
 function marketName(id){const m=S.markets.find(x=>x.id===id);return m?m.name:"";}
+function pimgOk(p){return p.image_data&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(p.image_data);}
 function pcard(p){
   const sp=species(p.name,p.pet_type);
   return `<div class="pcard" onclick="openProduct(${p.id})">
-    <div class="pimg" style="background:${sp.bg}">${sp.e}
+    <div class="pimg" style="background:${sp.bg}">${pimgOk(p)?`<img src="${p.image_data}" alt="">`:sp.e}
       ${sponsored(p.id)?`<span class="spons">${t("sponsored")}</span>`:""}</div>
     <div class="pinfo">
       <div class="pname">${esc(p.name)}</div>
@@ -417,11 +419,11 @@ function renderProduct(r){
   r.innerHTML=`
   <div class="top"><div class="brand"><button class="back" onclick="go('home')">‹</button><span>${esc(p.name)}</span><span></span></div></div>
   <div class="detail">
-    <div class="big" style="background:${sp.bg}">${sp.e}</div>
+    <div class="big" style="background:${sp.bg};position:relative;overflow:hidden">${pimgOk(p)?`<img src="${p.image_data}" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover">`:sp.e}</div>
     <div class="card">
       ${sponsored(p.id)?`<span class="pill" style="background:#fff3e0;color:var(--brand-d)">${t("sponsored")}</span>`:""}
       <h2 style="margin:6px 0">${esc(p.name)}</h2>
-      <div class="muted">${esc(marketName(p.market))}</div>
+      <div onclick="openShop(${p.market})" style="cursor:pointer;color:var(--brand);font-weight:600;font-size:13px">🏪 ${esc(marketName(p.market)||p.market_name||"Mağaza")} — bütün məhsulları gör ›</div>
       <div class="row" style="margin-top:8px">
         <span class="pprice" style="font-size:22px">${p.price_azn}</span>
         <span class="prate">★ ${rating(p.id)} · ${sold(p.id)} ${t("bought")}</span>
@@ -434,6 +436,7 @@ function renderProduct(r){
       </div>
       <div id="subpanel"></div>
     </div>
+    ${p.description?`<div class="card"><h2 style="margin:0 0 6px">📋 Məhsul haqqında</h2><p style="margin:0;white-space:pre-line">${esc(p.description)}</p></div>`:""}
     <div class="card">
       <h2 style="margin:0 0 6px">${t("comments")}</h2>
       ${cs.map(([n,txt])=>`<div class="comment"><div class="cname">${n} <span class="stars">★★★★★</span></div><div class="muted">${txt}</div></div>`).join("")}
@@ -656,6 +659,44 @@ async function cancelSub(id){
   else toast(r.data?.detail||"Xəta");
 }
 
+// ================= Satıcı profili (müştəri baxışı) =================
+function openShop(id){S.shopid=id;S.view="shopview";window.scrollTo(0,0);render();}
+async function renderShopView(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('home')">‹</button><span>🏪 Mağaza</span><span></span></div></div>
+    <div id="shv"><p class="muted" style="padding:20px">Yüklənir...</p></div>`;
+  const res=await api(`/markets/${S.shopid}/products/`);
+  if(!res.ok){el("shv").innerHTML=`<p class="err" style="padding:20px">Mağaza tapılmadı.</p>`;return;}
+  const shop=res.data.shop,list=res.data.products||[];
+  // Gelen mehsullari S.products-a birlesdir ki, openProduct(id) islesin.
+  list.forEach(p=>{const i=S.products.findIndex(x=>x.id===p.id);if(i>=0)S.products[i]=p;else S.products.push(p);});
+  el("shv").innerHTML=`
+    <div class="card" style="margin:12px">
+      <h2 style="margin:0">🏪 ${esc(shop.name)}</h2>
+      <div class="muted" style="margin-top:4px">📍 ${esc(shop.address)}</div>
+      ${shop.phone?`<div class="muted" style="margin-top:2px">📞 ${esc(shop.phone)}</div>`:""}
+      <div style="margin-top:8px"><span class="tag">${list.length} məhsul satışda</span></div>
+    </div>
+    <div class="grid">${list.map(pcard).join("")||`<p class="muted" style="padding:0 14px">Bu mağazada hələ məhsul yoxdur.</p>`}</div>`;
+}
+
+// ---- Şəkil seçmə + kiçiltmə (satıcı məhsul şəkli) ----
+function resizeImage(file,maxDim,quality){
+  return new Promise((res,rej)=>{
+    const rd=new FileReader();
+    rd.onload=()=>{const img=new Image();
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        const sc=Math.min(1,(maxDim||800)/Math.max(w,h));
+        w=Math.round(w*sc);h=Math.round(h*sc);
+        const c=document.createElement("canvas");c.width=w;c.height=h;
+        c.getContext("2d").drawImage(img,0,0,w,h);
+        res(c.toDataURL("image/jpeg",quality||0.78));
+      };
+      img.onerror=rej;img.src=rd.result;};
+    rd.onerror=rej;rd.readAsDataURL(file);
+  });
+}
+
 // ================= SATICI (Mağazam) =================
 var NEWPET="DOG";
 const PETOPTS=[["DOG","🐕","İt"],["CAT","🐱","Pişik"],["BIRD","🐦","Quş"],["FISH","🐟","Balıq"],["OTHER","🐾","Digər"]];
@@ -704,14 +745,29 @@ async function doCreateShop(){
   else el("shmsg").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;
 }
 function pickPet(k){NEWPET=k;PETOPTS.forEach(([kk])=>{const x=el("pp"+kk);if(x){x.style.borderColor=kk===k?"var(--brand)":"var(--line)";x.style.background=kk===k?"#fff3ec":"#fff";}});}
+var NEWIMG="";
+async function npImgPick(inp){
+  const f=inp.files&&inp.files[0];if(!f)return;
+  el("npimgprev").innerHTML=`<p class="muted">Şəkil hazırlanır...</p>`;
+  try{
+    NEWIMG=await resizeImage(f,800,0.78);
+    el("npimgprev").innerHTML=`<img src="${NEWIMG}" alt="" style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;margin:6px 0">
+      <button class="alink" onclick="NEWIMG='';el('npimgprev').innerHTML='';el('npimg').value=''">✕ Şəkli sil</button>`;
+  }catch(e){NEWIMG="";el("npimgprev").innerHTML=`<p class="err">Şəkil oxuna bilmədi.</p>`;}
+}
 async function renderAddProduct(r){
-  NEWPET="DOG";
+  NEWPET="DOG";NEWIMG="";
   r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('seller')">‹</button><span>➕ Yeni məhsul</span><span></span></div></div>
   <div class="wrap"><div class="card">
     <label>Hansı heyvan üçün?</label>
     <div style="display:flex;gap:6px;margin:6px 0 12px">${PETOPTS.map(([k,e,l])=>`<div onclick="pickPet('${k}')" id="pp${k}" style="flex:1;text-align:center;padding:8px 0;border:1.5px solid var(--line);border-radius:12px;cursor:pointer"><div style="font-size:22px">${e}</div><div style="font-size:11px">${l}</div></div>`).join("")}</div>
+    <label>Məhsulun şəkli 📷</label>
+    <input class="f" type="file" id="npimg" accept="image/*" onchange="npImgPick(this)">
+    <div id="npimgprev"></div>
     <label>Məhsulun adı</label>
     <input class="f" id="npname" placeholder="Məs: Royal Canin quru yem 4kg">
+    <label>Məhsul haqqında məlumat</label>
+    <textarea class="f" id="npdesc" rows="3" placeholder="Məs: Yetkin itlər üçün premium quru yem. Toyuq ətli, 4 kq."></textarea>
     <label>Kateqoriya</label>
     <select class="f" id="npcat">${CATOPTS.map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select>
     <label>Qiymət (AZN)</label>
@@ -719,7 +775,7 @@ async function renderAddProduct(r){
     <label>Stok (neçə ədəd var)</label>
     <input class="f" id="npstock" inputmode="numeric" value="10">
     <div id="npmsg"></div>
-    <button class="btn" onclick="doAddProduct()">Əlavə et</button>
+    <button class="btn" onclick="doAddProduct()">Paylaş 🚀</button>
   </div></div>`;
   pickPet("DOG");
 }
@@ -729,19 +785,39 @@ async function doAddProduct(){
   if(!el("npname").value.trim()){el("npmsg").innerHTML=`<p class="err">Ad daxil edin.</p>`;return;}
   if(!price||price<=0){el("npmsg").innerHTML=`<p class="err">Düzgün qiymət daxil edin.</p>`;return;}
   const body=JSON.stringify({name:el("npname").value,category:el("npcat").value,pet_type:NEWPET,
-    price_qepik:price,stock_qty:isNaN(stock)?0:stock});
+    price_qepik:price,stock_qty:isNaN(stock)?0:stock,
+    description:el("npdesc").value.trim(),image_data:NEWIMG});
   const r=await api("/seller/products/",{method:"POST",body});
-  if(r.ok){toast("Məhsul əlavə olundu ✓");go("myproducts");}
+  if(r.ok){toast("Məhsul paylaşıldı ✓");go("myproducts");}
   else el("npmsg").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;
+}
+var IMGPID=null;
+function changeImg(id){IMGPID=id;el("imgpick").click();}
+async function sellerImgPicked(inp){
+  const f=inp.files&&inp.files[0];inp.value="";
+  if(!f||!IMGPID)return;
+  toast("Şəkil hazırlanır...");
+  try{
+    const data=await resizeImage(f,800,0.78);
+    const r=await api(`/seller/products/${IMGPID}/`,{method:"PATCH",body:JSON.stringify({image_data:data})});
+    if(r.ok){toast("Şəkil yeniləndi ✓");renderMyProducts(el("root"));}
+    else toast(r.data?.detail||"Xəta");
+  }catch(e){toast("Şəkil oxuna bilmədi");}
 }
 async function renderMyProducts(r){
   r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('seller')">‹</button><span>📦 Məhsullarım</span><span></span></div></div>
-    <div class="wrap"><button class="btn" onclick="go('addproduct')">➕ Yeni məhsul</button><div id="mp" style="margin-top:10px"><p class="muted">Yüklənir...</p></div></div>`;
+    <div class="wrap"><button class="btn" onclick="go('addproduct')">➕ Yeni məhsul</button>
+    <input type="file" id="imgpick" accept="image/*" style="display:none" onchange="sellerImgPicked(this)">
+    <div id="mp" style="margin-top:10px"><p class="muted">Yüklənir...</p></div></div>`;
   const list=await apiAll("/seller/products/");
   el("mp").innerHTML=list.length?list.map(p=>{
     const sp=species(p.name,p.pet_type);
     return `<div class="card" style="margin:10px 0">
       <div class="row"><b>${sp.e} ${esc(p.name)}</b><span class="tag">${p.is_active?"Aktiv":"Gizli"}</span></div>
+      ${pimgOk(p)?`<img src="${p.image_data}" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:10px;margin-top:8px">`:""}
+      <button class="alink" onclick="changeImg(${p.id})">📷 ${pimgOk(p)?"Şəkli dəyiş":"Şəkil əlavə et"}</button>
+      <label style="font-size:11px">Məhsul haqqında</label>
+      <textarea class="f" style="margin:2px 0 0" id="ed${p.id}" rows="2" placeholder="Məhsul haqqında məlumat...">${esc(p.description||"")}</textarea>
       <div style="display:flex;gap:8px;margin-top:8px">
         <div style="flex:1"><label style="font-size:11px">Qiymət (AZN)</label><input class="f" style="margin:2px 0 0" id="ep${p.id}" inputmode="decimal" value="${(p.price_qepik/100).toFixed(2)}"></div>
         <div style="flex:1"><label style="font-size:11px">Stok</label><input class="f" style="margin:2px 0 0" id="es${p.id}" inputmode="numeric" value="${p.stock_qty}"></div>
@@ -758,7 +834,8 @@ async function saveProd(id){
   const price=Math.round(parseFloat((el("ep"+id).value||"0").replace(",","."))*100);
   const stock=parseInt(el("es"+id).value||"0",10);
   if(!price||price<=0){toast("Düzgün qiymət yaz");return;}
-  const r=await api(`/seller/products/${id}/`,{method:"PATCH",body:JSON.stringify({price_qepik:price,stock_qty:isNaN(stock)?0:stock})});
+  const desc=el("ed"+id)?el("ed"+id).value.trim():"";
+  const r=await api(`/seller/products/${id}/`,{method:"PATCH",body:JSON.stringify({price_qepik:price,stock_qty:isNaN(stock)?0:stock,description:desc})});
   if(r.ok){toast("Yadda saxlanıldı ✓");renderMyProducts(el("root"));}else toast(r.data?.detail||"Xəta");
 }
 async function toggleProd(id,active){
@@ -827,6 +904,7 @@ render=async function(){
   if(S.view==="triageview"){renderNav();return renderTriageView(el("root"));}
   if(S.view==="subsview"){renderNav();return renderSubsView(el("root"));}
   if(S.view==="notifs"){renderNav();return renderNotifs(el("root"));}
+  if(S.view==="shopview"){renderNav();return renderShopView(el("root"));}
   if(S.view==="seller"){renderNav();return renderSeller(el("root"));}
   if(S.view==="addproduct"){renderNav();return renderAddProduct(el("root"));}
   if(S.view==="myproducts"){renderNav();return renderMyProducts(el("root"));}
