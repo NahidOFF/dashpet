@@ -428,7 +428,10 @@ function renderProduct(r){
       </div>
       <div style="margin-top:10px"><span class="tag">${p.category}</span> <span class="tag">Stok: ${p.stock_qty}</span></div>
       <div style="margin-top:12px"><button class="btn" onclick="addCart(${p.id})">🛒 ${t("add")}</button></div>
-      <div style="margin-top:8px"><button class="btn ghost" onclick="subBtn(${p.id})">📦 Aylıq abunə ol, hər ay qapında olsun!${S.user&&S.user.is_subscriber?" (pulsuz)":""}</button></div>
+      <div style="margin-top:8px">
+        <button class="btn ghost" onclick="subBtn(${p.id})">📦 Aylıq abunə ol — PULSUZ</button>
+        <div class="muted" style="font-size:12px;margin-top:5px;color:var(--ok);font-weight:600">🎁 2-ci aydan hər ay 5% endirim</div>
+      </div>
       <div id="subpanel"></div>
     </div>
     <div class="card">
@@ -453,25 +456,17 @@ function toast(msg){
   x.textContent=msg;x.style.opacity="1";clearTimeout(window._tt);window._tt=setTimeout(()=>x.style.opacity="0",1800);
 }
 
-// ---- Abunelik (1.50 AZN abunecilik + mehsula ayliq abune) ----
+// ---- Abunelik (PULSUZ + 2-ci aydan 5% endirim) ----
 function subBtn(pid){
-  if(S.user&&S.user.is_subscriber){doProductSub(pid);return;}
-  const box=el("subpanel"); if(!box)return;
+  const box=el("subpanel"); if(!box){doProductSub(pid);return;}
   box.innerHTML=`
     <div class="card" style="margin:10px 0;border:1.5px solid var(--brand)">
       <b>İstədiyin məhsula abunə ol, hər ay sifariş vermədən qapında olsun!</b>
-      <p class="muted" style="margin:8px 0">Birdəfəlik abunəçilik haqqı: <b>1.50 ₼</b>. Sonra istənilən məhsula abunə <b>pulsuzdur</b> — hər ay avtomatik sifariş olunub qapına gətirilir. İstədiyin vaxt ləğv edə bilərsən.</p>
-      <button class="btn" onclick="doActivateSub(${pid})">Abunəçi ol — 1.50 ₼</button>
+      <p class="muted" style="margin:8px 0">Abunə olmaq <b>tamamilə pulsuzdur</b> — hər ay avtomatik sifariş olunub qapına gətirilir. İstədiyin vaxt ləğv edə bilərsən.</p>
+      <p style="margin:8px 0;color:var(--ok);font-weight:700">🎁 2-ci aydan hər ay 5% endirim!</p>
+      <button class="btn" onclick="doProductSub(${pid})">Pulsuz abunə ol 📦</button>
       <div id="submsg"></div>
     </div>`;
-}
-async function doActivateSub(pid){
-  el("submsg").innerHTML=`<p class="muted">Ödənilir...</p>`;
-  const r=await api("/subscribe-platform/",{method:"POST"});
-  if(!r.ok){el("submsg").innerHTML=`<p class="err">${esc(r.data?.detail||"Xəta baş verdi.")}</p>`;return;}
-  S.user.is_subscriber=true;
-  toast("Abunəçilik aktivdir ✓");
-  await doProductSub(pid);
 }
 async function doProductSub(pid){
   const p=findP(pid); if(!p)return;
