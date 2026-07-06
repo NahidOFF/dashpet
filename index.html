@@ -20,12 +20,38 @@
     --star:#f5a623; --ok:#2e8b57; --danger:#c0392b; --warn:#d98a1f;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  body{margin:0;background:var(--bg);color:var(--ink);
+  body{margin:0;background-color:var(--bg);color:var(--ink);
+    /* "Gorunmez" petek: kunclerde iri, cox solgun bal huceyreleri (referans uslubu). */
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='330'%3E%3Cg fill='%23F0C766' fill-opacity='0.16'%3E%3Cpolygon points='75,10 195,10 255,114 195,218 75,218 15,114'/%3E%3Cpolygon points='195,150 285,150 330,228 285,306 195,306 150,228'/%3E%3Cpolygon points='60,230 130,230 165,291 130,352 60,352 25,291'/%3E%3C/g%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='330'%3E%3Cg fill='%23F0C766' fill-opacity='0.16'%3E%3Cpolygon points='75,10 195,10 255,114 195,218 75,218 15,114'/%3E%3Cpolygon points='195,150 285,150 330,228 285,306 195,306 150,228'/%3E%3Cpolygon points='60,230 130,230 165,291 130,352 60,352 25,291'/%3E%3C/g%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='330'%3E%3Cg fill='%23F0C766' fill-opacity='0.16'%3E%3Cpolygon points='75,10 195,10 255,114 195,218 75,218 15,114'/%3E%3Cpolygon points='195,150 285,150 330,228 285,306 195,306 150,228'/%3E%3Cpolygon points='60,230 130,230 165,291 130,352 60,352 25,291'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat:no-repeat,no-repeat,no-repeat;
+    background-position:left -110px top 100px, right -130px top 45%, left -80px bottom -90px;
     font-family:"Segoe UI",Roboto,Tahoma,sans-serif;line-height:1.45;padding-bottom:66px;}
   .app{max-width:520px;margin:0 auto;}
   /* Basliq — logoya uygun acig (ag) stil, Poppins logotip */
   .top{position:sticky;top:0;z-index:20;background:#fff;color:var(--ink);padding:10px 14px;
-    border-bottom:1px solid var(--line);box-shadow:0 1px 8px rgba(46,50,64,.06);}
+    box-shadow:0 1px 8px rgba(46,50,64,.06);}
+  /* Bal axini: UZVI (dalgali) eriyen kenar — sol tereflerde de az-maz damcilar,
+     sagda ise BOYUK, parlaq, damlayan bal kutlesi. Duz xett YOXDUR. */
+  .top::after{content:"";position:absolute;left:0;right:0;top:100%;height:64px;pointer-events:none;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='62'%3E%3Cdefs%3E%3ClinearGradient id='hb' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23F7B21B'/%3E%3Cstop offset='1' stop-color='%23EE8A0E'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='130' height='8' fill='url(%23hb)'/%3E%3Cellipse cx='30' cy='8' rx='26' ry='11' fill='url(%23hb)'/%3E%3Cellipse cx='72' cy='7' rx='26' ry='13' fill='url(%23hb)'/%3E%3Cellipse cx='108' cy='8' rx='22' ry='10' fill='url(%23hb)'/%3E%3Crect x='26' y='4' width='9' height='30' rx='4.5' fill='url(%23hb)'/%3E%3Crect x='61' y='4' width='11' height='48' rx='5.5' fill='url(%23hb)'/%3E%3Crect x='96' y='4' width='8' height='24' rx='4' fill='url(%23hb)'/%3E%3Cellipse cx='64.5' cy='24' rx='1.8' ry='9' fill='%23FFE38F' opacity='.85'/%3E%3Cellipse cx='28.5' cy='15' rx='1.5' ry='6' fill='%23FFE38F' opacity='.8'/%3E%3Cellipse cx='42' cy='5' rx='10' ry='1.7' fill='%23FFE38F' opacity='.7'/%3E%3C/svg%3E") no-repeat right 6px top/130px 62px,
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='44'%3E%3Cdefs%3E%3ClinearGradient id='hm' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23F7B21B'/%3E%3Cstop offset='1' stop-color='%23EE8A0E'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='200' height='6' fill='url(%23hm)'/%3E%3Cellipse cx='0' cy='6' rx='16' ry='6' fill='url(%23hm)'/%3E%3Cellipse cx='200' cy='6' rx='16' ry='6' fill='url(%23hm)'/%3E%3Cellipse cx='30' cy='6' rx='20' ry='8' fill='url(%23hm)'/%3E%3Cellipse cx='68' cy='5' rx='20' ry='5.5' fill='url(%23hm)'/%3E%3Cellipse cx='105' cy='6' rx='22' ry='9' fill='url(%23hm)'/%3E%3Cellipse cx='145' cy='5' rx='20' ry='6' fill='url(%23hm)'/%3E%3Cellipse cx='177' cy='6' rx='16' ry='7.5' fill='url(%23hm)'/%3E%3Crect x='40' y='2' width='7' height='22' rx='3.5' fill='url(%23hm)'/%3E%3Crect x='118' y='2' width='6' height='16' rx='3' fill='url(%23hm)'/%3E%3Crect x='160' y='2' width='8' height='27' rx='4' fill='url(%23hm)'/%3E%3Ccircle cx='43.5' cy='33' r='2.4' fill='%23F1980F'/%3E%3Ccircle cx='164' cy='38' r='2.8' fill='%23F1980F'/%3E%3C/svg%3E") repeat-x left top/200px 44px;}
+  /* Sagdaki boyuk bal kutlesinden dusen damla (heraketli) — GPU-yungul */
+  .top::before{content:"";position:absolute;right:58px;top:calc(100% + 48px);width:10px;height:13px;
+    background:linear-gradient(#F7B21B,#EE8A0E);border-radius:50% 50% 62% 62%/40% 40% 72% 72%;
+    opacity:0;pointer-events:none;z-index:21;animation:hdrop 6.5s ease-in infinite;}
+  @keyframes hdrop{
+    0%{transform:translateY(0) scale(.4,.5);opacity:0}
+    9%{transform:translateY(0) scale(.85,.9);opacity:.97}
+    17%{transform:translateY(2px) scale(1,1.28);opacity:1}
+    33%{transform:translateY(34px) scale(.95,1.12);opacity:.9}
+    50%{transform:translateY(74px) scale(.9,1.18);opacity:0}
+    100%{transform:translateY(74px);opacity:0}
+  }
+  @media (prefers-reduced-motion:reduce){.top::before{animation:none;opacity:0;}}
   .top .brand{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:19px;
     font-family:'Poppins','Segoe UI',Roboto,sans-serif;}
   .top .loc{font-size:12px;opacity:.75;font-weight:400;font-family:'Segoe UI',Roboto,sans-serif;}
@@ -43,9 +69,11 @@
   .cats{display:flex;gap:10px;overflow-x:auto;padding:12px 12px 4px;scrollbar-width:none;}
   .cats::-webkit-scrollbar{display:none;}
   .cat{flex:0 0 auto;text-align:center;cursor:pointer;width:62px;}
-  .cat .ic{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;
-    font-size:28px;margin:0 auto;background:#fff;border:1px solid var(--line);}
-  .cat.active .ic{background:var(--brand);border-color:var(--brand);}
+  /* Kateqoriya ikonlari — petek huceyresi (altibucaq) formasinda */
+  .cat .ic{width:56px;height:58px;display:flex;align-items:center;justify-content:center;
+    font-size:28px;margin:0 auto;background:#FBEECF;border:0;
+    clip-path:polygon(25% 4%,75% 4%,97% 50%,75% 96%,25% 96%,3% 50%);}
+  .cat.active .ic{background:var(--brand);}
   .cat .lb{font-size:11px;margin-top:4px;color:var(--muted);}
   .cat.active .lb{color:var(--brand);font-weight:700;}
   /* Mehsul grid */
