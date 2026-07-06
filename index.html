@@ -239,6 +239,21 @@ function ssoBlock(){
     </div>
     <p class="muted" style="text-align:center;margin:8px 0 0;font-size:11px">Google/Apple girişi tezliklə (domain açılandan sonra)</p>`;
 }
+// Telefon sahesi: +994 sabit yapisdirilir, istifadeci yalniz yerli hisseni yazir.
+function phoneField(id){
+  return `<div style="display:flex;align-items:stretch;gap:0;margin:6px 0">
+    <span style="display:flex;align-items:center;padding:0 12px;background:#f3ede3;border:1px solid var(--line);border-right:0;border-radius:12px 0 0 12px;font-weight:700;white-space:nowrap">🇦🇿 +994</span>
+    <input class="f" style="margin:0;border-radius:0 12px 12px 0" id="${id}" inputmode="numeric" placeholder="50 123 45 67" autocomplete="username">
+  </div>`;
+}
+// Nomreni vahid formata salir: 0501234567 / 501234567 / +994... / 994... -> +994XXXXXXXXX
+// 0-in ferqi yoxdur. Yanlis format -> bos setir.
+function normPhone(v){
+  v=(v||"").replace(/\D/g,"");
+  if(v.startsWith("994"))v=v.slice(3);
+  if(v.startsWith("0"))v=v.slice(1);
+  return v.length===9?"+994"+v:"";
+}
 function renderAuth(r){
   if(AUTHV==="register")return renderRegister(r);
   if(AUTHV==="forgot1")return renderForgot1(r);
@@ -248,7 +263,7 @@ function renderAuth(r){
   <div class="wrap">
     <h2>Giriş 🐾</h2>
     <div class="card">
-      <input class="f" id="phone" placeholder="Telefon: +994501234567" autocomplete="username">
+      ${phoneField("phone")}
       <input class="f" id="pw" type="password" placeholder="Parol" autocomplete="current-password">
       <div id="amsg"></div>
       <button class="btn" onclick="doLogin()">Giriş</button>
@@ -267,7 +282,7 @@ function renderRegister(r){
     <h2>Hesab yarat 🐾</h2>
     <div class="card">
       <input class="f" id="rname" placeholder="Adın">
-      <input class="f" id="rphone" placeholder="Telefon: +994501234567" autocomplete="username">
+      ${phoneField("rphone")}
       <input class="f" id="remail" type="email" placeholder="Email: sen@mail.com" autocomplete="email">
       <input class="f" id="rpw" type="password" placeholder="Parol (ən azı 8 simvol)" autocomplete="new-password">
       <div id="amsg"></div>
@@ -304,14 +319,18 @@ function renderForgot2(r){
 }
 function showErr(d){el("amsg").innerHTML=`<p class="err">${esc(typeof d==="string"?d:Object.values(d).flat().join(" "))}</p>`;}
 async function doRegister(){
-  const b=JSON.stringify({phone:el("rphone").value,email:el("remail").value,
+  const ph=normPhone(el("rphone").value);
+  if(!ph){showErr("Nömrəni düzgün yaz: 501234567 və ya 0501234567 (9 rəqəm).");return;}
+  const b=JSON.stringify({phone:ph,email:el("remail").value,
     password:el("rpw").value,name:el("rname").value});
   const r=await api("/auth/register/",{method:"POST",body:b});
   if(r.ok){T.set(r.data.token);await boot();go("home");}
   else showErr(r.data||"Xəta baş verdi.");
 }
 async function doLogin(){
-  const b=JSON.stringify({phone:el("phone").value,password:el("pw").value});
+  const ph=normPhone(el("phone").value);
+  if(!ph){showErr("Nömrəni düzgün yaz: 501234567 və ya 0501234567 (9 rəqəm).");return;}
+  const b=JSON.stringify({phone:ph,password:el("pw").value});
   const r=await api("/auth/login/",{method:"POST",body:b});
   if(r.ok){T.set(r.data.token);await boot();go("home");}
   else showErr(r.data?.detail||"Xəta baş verdi.");
