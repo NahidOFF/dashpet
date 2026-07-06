@@ -4,27 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Petekh</title>
+<meta name="theme-color" content="#F49B0D">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='pg' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23F7B21B'/%3E%3Cstop offset='1' stop-color='%23F08A12'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M83.3 63.8 63.8 83.3 36.2 83.3 16.7 63.8 16.7 36.2 36.2 16.7 63.8 16.7 83.3 36.2Z' fill='none' stroke='url(%23pg)' stroke-width='13' stroke-dasharray='24.5 3.1'/%3E%3Cellipse cx='50' cy='56' rx='11' ry='8.5' fill='%232E3240'/%3E%3Cellipse cx='38.5' cy='43' rx='4.8' ry='6.4' fill='%232E3240' transform='rotate(-22 38.5 43)'/%3E%3Cellipse cx='50' cy='39' rx='4.8' ry='6.6' fill='%232E3240'/%3E%3Cellipse cx='61.5' cy='43' rx='4.8' ry='6.4' fill='%232E3240' transform='rotate(22 61.5 43)'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
 <script src="config.js?v=20260706"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root{
-    --bg:#f6f3ee; --card:#ffffff; --ink:#2b2a26; --muted:#8a857c;
-    --brand:#e8632c; --brand-d:#c44f1e; --price:#d6371f; --line:#ece6db;
+    /* Petekh brend palitrasi — logodaki bal-narinci petek + tund pence rengi */
+    --bg:#faf7f0; --card:#ffffff; --ink:#2E3240; --muted:#8a857c;
+    --brand:#F49B0D; --brand-d:#D97D06; --price:#d6371f; --line:#f0e8d8;
     --star:#f5a623; --ok:#2e8b57; --danger:#c0392b; --warn:#d98a1f;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   body{margin:0;background:var(--bg);color:var(--ink);
     font-family:"Segoe UI",Roboto,Tahoma,sans-serif;line-height:1.45;padding-bottom:66px;}
   .app{max-width:520px;margin:0 auto;}
-  /* Basliq */
-  .top{position:sticky;top:0;z-index:20;background:var(--brand);color:#fff;padding:10px 14px;
-    box-shadow:0 2px 8px rgba(0,0,0,.12);}
-  .top .brand{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:19px;}
-  .top .loc{font-size:12px;opacity:.9;font-weight:400;}
-  .search{margin-top:9px;background:#fff;border-radius:12px;padding:9px 12px;display:flex;gap:8px;align-items:center;}
-  .search input{border:0;outline:0;width:100%;font-size:14px;color:var(--ink);}
-  .back{background:none;border:0;color:#fff;font-size:20px;cursor:pointer;padding:0 8px 0 0;}
+  /* Basliq — logoya uygun acig (ag) stil, Poppins logotip */
+  .top{position:sticky;top:0;z-index:20;background:#fff;color:var(--ink);padding:10px 14px;
+    border-bottom:1px solid var(--line);box-shadow:0 1px 8px rgba(46,50,64,.06);}
+  .top .brand{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:19px;
+    font-family:'Poppins','Segoe UI',Roboto,sans-serif;}
+  .top .loc{font-size:12px;opacity:.75;font-weight:400;font-family:'Segoe UI',Roboto,sans-serif;}
+  .search{margin-top:9px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:9px 12px;display:flex;gap:8px;align-items:center;}
+  .search input{border:0;outline:0;width:100%;font-size:14px;color:var(--ink);background:transparent;}
+  .back{background:none;border:0;color:var(--ink);font-size:20px;cursor:pointer;padding:0 8px 0 0;}
+  .logotype{display:inline-flex;align-items:center;gap:8px;}
+  .logotype svg{display:block;}
+  .logotype b{font-family:'Poppins','Segoe UI',Roboto,sans-serif;font-weight:600;font-size:20px;
+    color:var(--ink);letter-spacing:.2px;}
   /* Umumi */
   .wrap{padding:12px 12px 20px;}
   h2{font-size:17px;margin:14px 2px 8px;}
@@ -239,6 +250,23 @@ function ssoBlock(){
     </div>
     <p class="muted" style="text-align:center;margin:8px 0 0;font-size:11px">Google/Apple girişi tezliklə (domain açılandan sonra)</p>`;
 }
+// ---- Petekh loqosu (petek + pence) — SVG, her olcude iti gorunur ----
+function logoSvg(size){
+  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true">
+    <defs><linearGradient id="pg${size}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7B21B"/><stop offset="1" stop-color="#F08A12"/>
+    </linearGradient></defs>
+    <path d="M83.3 63.8 63.8 83.3 36.2 83.3 16.7 63.8 16.7 36.2 36.2 16.7 63.8 16.7 83.3 36.2Z"
+      fill="none" stroke="url(#pg${size})" stroke-width="13" stroke-dasharray="24.5 3.1"/>
+    <ellipse cx="50" cy="56" rx="11" ry="8.5" fill="#2E3240"/>
+    <ellipse cx="38.5" cy="43" rx="4.8" ry="6.4" fill="#2E3240" transform="rotate(-22 38.5 43)"/>
+    <ellipse cx="50" cy="39" rx="4.8" ry="6.6" fill="#2E3240"/>
+    <ellipse cx="61.5" cy="43" rx="4.8" ry="6.4" fill="#2E3240" transform="rotate(22 61.5 43)"/>
+  </svg>`;
+}
+// Menyu/basliq ucun: loqo + saginda logodaki fontda "Petekh"
+function brandLogo(){return `<span class="logotype">${logoSvg(30)}<b>Petekh</b></span>`;}
+
 // Telefon sahesi: +994 sabit yapisdirilir, istifadeci yalniz yerli hisseni yazir.
 function phoneField(id){
   return `<div style="display:flex;align-items:stretch;gap:0;margin:6px 0">
@@ -259,7 +287,7 @@ function renderAuth(r){
   if(AUTHV==="forgot1")return renderForgot1(r);
   if(AUTHV==="forgot2")return renderForgot2(r);
   r.innerHTML=`
-  <div class="top"><div class="brand"><span>🐾 Petekh</span></div></div>
+  <div class="top"><div class="brand">${brandLogo()}</div></div>
   <div class="wrap">
     <h2>Giriş 🐾</h2>
     <div class="card">
@@ -373,7 +401,7 @@ function renderHome(r){
   if(q)list=list.filter(p=>p.name.toLowerCase().includes(q));
   r.innerHTML=`
   <div class="top">
-    <div class="brand"><span>🐾 Petekh</span>
+    <div class="brand">${brandLogo()}
       <span style="display:flex;align-items:center;gap:12px"><span class="loc">📍 Bakı–Sumqayıt</span>${bellHtml()}</span></div>
     <div class="search">🔍<input id="q" placeholder="${t("search")}" value="${esc(S._q||"")}"
       oninput="S._q=this.value;clearTimeout(window._st);window._st=setTimeout(()=>renderGridOnly(),250)"></div>
@@ -391,7 +419,7 @@ function renderHome(r){
 // ---- Zeng / bildirisler ----
 function bellHtml(){
   const b=S.unread?`<span style="position:absolute;top:-6px;right:-8px;background:var(--price);color:#fff;font-size:10px;min-width:16px;height:16px;line-height:16px;border-radius:8px;padding:0 4px;font-weight:700">${S.unread>9?"9+":S.unread}</span>`:"";
-  return `<button onclick="go('notifs')" style="background:none;border:0;color:#fff;font-size:20px;position:relative;cursor:pointer;padding:0">🔔${b}</button>`;
+  return `<button onclick="go('notifs')" style="background:none;border:0;color:var(--ink);font-size:20px;position:relative;cursor:pointer;padding:0">🔔${b}</button>`;
 }
 async function refreshUnread(){const r=await api("/notifications/unread_count/");if(r.ok)S.unread=r.data.count;}
 async function renderNotifs(r){
