@@ -616,11 +616,19 @@ function renderCart(r){
       </div>`;}).join("")}
     <div class="card">
       <div class="row"><span>${t("total")}</span><b style="font-size:20px;color:var(--price)">${azn(sub)}</b></div>
-      <div id="paybox"><button class="btn" style="margin-top:10px" onclick="showPay(${sub})">${t("buy")}</button></div>
+      <div id="paybox">${sub<MIN_ORDER_QEPIK
+        ?`<div class="card" style="margin:10px 0 0;background:#fff7e6;border-color:var(--brand);text-align:center">
+            <b>Minimum sifariş ${azn(MIN_ORDER_QEPIK)}-dir</b>
+            <div class="muted" style="margin-top:2px">Daha ${azn(MIN_ORDER_QEPIK-sub)} əlavə et 🛒</div>
+            <button class="btn ghost" style="margin-top:8px" onclick="go('home')">Məhsullara bax</button>
+          </div>`
+        :`<button class="btn" style="margin-top:10px" onclick="showPay(${sub})">${t("buy")}</button>`}</div>
     </div>
   </div>`;
 }
 function chQty(id,d){const c=S.cart[id];if(!c)return;c.qty+=d;if(c.qty<=0)delete S.cart[id];render();}
+// Minimum sifaris meblegi (qepik) — backend ile eynidir. 5 AZN-e endirende 500 yaz.
+const MIN_ORDER_QEPIK=1000;
 // Sonuncu unvan yadda qalir (abunelik ve novbeti sifarisler ucun).
 const ADDR={get:()=>localStorage.getItem("delivery_addr")||"",set:v=>localStorage.setItem("delivery_addr",v)};
 function showPay(sub){
