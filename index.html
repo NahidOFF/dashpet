@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260708"></script>
+<script src="config.js?v=20260709"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -334,7 +334,11 @@ function renderAuth(r){
       ${ssoBlock()}
       <div style="text-align:center;margin-top:14px" class="muted">Hesabın yoxdur?
         <button class="alink" onclick="setAuth('register')">Qeydiyyatdan keç</button></div>
-    </div></div>`;
+    </div>
+    <p class="muted" style="text-align:center;font-size:11px;margin-top:12px">
+      Davam etməklə <a href="/sertler.html" target="_blank" style="color:var(--brand)">İstifadə Şərtləri</a>
+      və <a href="/mexfilik.html" target="_blank" style="color:var(--brand)">Məxfilik Siyasəti</a> ilə razılaşırsan.
+    </p></div>`;
 }
 function renderRegister(r){
   r.innerHTML=`
@@ -790,8 +794,21 @@ function renderSettings(r){
       <span>${f[0]}</span><span id="fi${i}">+</span></div><div class="faq-a" id="fa${i}">${f[1]}</div></div>`).join("")}
     <div style="height:14px"></div>
     <button class="btn ghost" style="margin:0 12px;width:calc(100% - 24px)" onclick="doLogout()">${t("signout")}</button>
+    <h2>Əlaqə & Dəstək</h2>
+    <div class="set-row"><div style="padding:12px">${contactHtml()}</div></div>
+    <div class="set-row"><div class="faq-q" onclick="window.open('/sertler.html','_blank')"><span>📄 İstifadə Şərtləri</span><span>›</span></div></div>
+    <div class="set-row"><div class="faq-q" onclick="window.open('/mexfilik.html','_blank')"><span>🔒 Məxfilik Siyasəti</span><span>›</span></div></div>
     <p class="muted" style="text-align:center;margin-top:14px">Petekh · Bakı–Sumqayıt 🐾</p>
   </div>`;
+}
+function contactHtml(){
+  const c=window.PETEKH_CONTACT||{};
+  const rows=[];
+  if(c.phone)rows.push(`<a href="tel:${esc(c.phone)}" style="color:var(--ink);text-decoration:none">📞 ${esc(c.phone)}</a>`);
+  if(c.whatsapp)rows.push(`<a href="https://wa.me/${esc(c.whatsapp.replace(/\D/g,''))}" target="_blank" style="color:var(--ink);text-decoration:none">💬 WhatsApp</a>`);
+  if(c.instagram)rows.push(`<a href="https://instagram.com/${esc(c.instagram.replace('@',''))}" target="_blank" style="color:var(--ink);text-decoration:none">📷 @${esc(c.instagram.replace('@',''))}</a>`);
+  if(c.email)rows.push(`<a href="mailto:${esc(c.email)}" style="color:var(--ink);text-decoration:none">✉️ ${esc(c.email)}</a>`);
+  return rows.length?rows.map(r=>`<div style="margin:4px 0">${r}</div>`).join(""):`<span class="muted">Əlaqə tezliklə əlavə olunacaq.</span>`;
 }
 function setLang(l){LANG.set(l);render();}
 function toggleFaq(i){const a=el("fa"+i),ic=el("fi"+i);const open=a.style.display==="block";
