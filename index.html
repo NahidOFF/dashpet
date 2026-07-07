@@ -630,7 +630,25 @@ function chQty(id,d){const c=S.cart[id];if(!c)return;c.qty+=d;if(c.qty<=0)delete
 // Minimum sifaris meblegi (qepik) — backend ile eynidir. 5 AZN-e endirende 500 yaz.
 const MIN_ORDER_QEPIK=1000;
 // Catdirilma haqqi — backend ile eynidir (kuryer xerci musteriden).
+// Catdirilma tarifleri (backend ile eyni). Eyni zona / zonalar arasi.
 const DELIVERY_FEE_QEPIK=299, FREE_DELIVERY_FROM_QEPIK=3000;
+const DELIVERY_FEE_CROSS_QEPIK=599, FREE_DELIVERY_CROSS_FROM_QEPIK=6000;
+// Unvandan zona tap (backend detect_zone ile eyni mentiq).
+function detectZone(txt){
+  const t=(txt||"").toLowerCase().replace(/ı/g,"i").replace(/ş/g,"s").replace(/ə/g,"e");
+  if(t.includes("sumqay"))return "SUMQAYIT";
+  if(["xirdalan","abseron","absheron","masazir","saray","hovsan"].some(k=>t.includes(k)))return "ABSHERON";
+  return "BAKU";
+}
+// Sebetdeki marketlerin zonasi (unvana gore) catdirilma haqqini hesabla.
+function calcDelivery(sub,addr){
+  const custZone=detectZone(addr);
+  // Sebetdeki hansisa market musteriden ayri zonadadirsa cross tarif.
+  const cross=Object.values(S.cart).some(c=>detectZone(marketName(c.p.market)+" "+(S.markets.find(m=>m.id===c.p.market)?.address||""))!==custZone);
+  const fee=cross?DELIVERY_FEE_CROSS_QEPIK:DELIVERY_FEE_QEPIK;
+  const free=cross?FREE_DELIVERY_CROSS_FROM_QEPIK:FREE_DELIVERY_FROM_QEPIK;
+  return {fee:sub>=free?0:fee, free, cross};
+}
 // Sonuncu unvan yadda qalir (abunelik ve novbeti sifarisler ucun).
 const ADDR={get:()=>localStorage.getItem("delivery_addr")||"",set:v=>localStorage.setItem("delivery_addr",v)};
 function showPay(sub){
@@ -640,7 +658,7 @@ function showPay(sub){
   el("paybox").innerHTML=`
     <div style="margin-top:12px;border-top:1px dashed var(--line);padding-top:10px">
       <label>Çatdırılma ünvanı</label>
-      <input class="f" id="caddr" placeholder="Məs: Bakı, Nəsimi r., Azadlıq pr. 12, m. 45" value="${esc(ADDR.get())}">
+      <input class="f" id="caddr" placeholder="Məs: Bakı, Nəsimi r., Azadlıq pr. 12, m. 45" value="${esc(ADDR.get())}" oninput="updatePaySummary(${sub})">
       <label>Ödəniş üsulu</label>
       <div style="display:flex;gap:8px;margin:6px 0 4px">
         <div style="flex:1;border:2px solid var(--brand);border-radius:12px;padding:10px;text-align:center;background:#fff7e6">
@@ -651,15 +669,20 @@ function showPay(sub){
           <div class="muted" style="font-size:11px">Tezliklə (bank inteqrasiyası)</div></div>
       </div>
       <div class="row" style="margin-top:8px"><span>${t("total")}</span><b>${azn(sub)}</b></div>
-      ${(()=>{const fee=sub<FREE_DELIVERY_FROM_QEPIK?DELIVERY_FEE_QEPIK:0;return `
-      <div class="row muted" style="margin-top:4px"><span>${t("delivery")}</span>
-        ${fee?`<span>${azn(fee)}</span>`:`<span style="color:var(--ok)">Pulsuz ✓</span>`}</div>
-      ${fee?`<div class="muted" style="font-size:11px;text-align:right">${azn(FREE_DELIVERY_FROM_QEPIK)}-dən yuxarı çatdırılma pulsuzdur</div>`:""}
-      <div class="row" style="margin-top:6px;font-size:18px"><b>Yekun</b><b style="color:var(--price)">${azn(sub+fee)}</b></div>`;})()}
+      <div id="paysummary">${paySummaryHtml(sub,ADDR.get())}</div>
       <button class="btn" style="margin-top:10px" onclick="checkout()">Sifarişi təsdiqlə 💵</button>
       <div id="cmsg"></div>
     </div>`;
 }
+function paySummaryHtml(sub,addr){
+  const d=calcDelivery(sub,addr);
+  return `
+    <div class="row muted" style="margin-top:4px"><span>${t("delivery")}${d.cross?" (zonalararası)":""}</span>
+      ${d.fee?`<span>${azn(d.fee)}</span>`:`<span style="color:var(--ok)">Pulsuz ✓</span>`}</div>
+    ${d.fee?`<div class="muted" style="font-size:11px;text-align:right">${azn(d.free)}-dən yuxarı çatdırılma pulsuzdur</div>`:""}
+    <div class="row" style="margin-top:6px;font-size:18px"><b>Yekun</b><b style="color:var(--price)">${azn(sub+d.fee)}</b></div>`;
+}
+function updatePaySummary(sub){const b=el("paysummary");if(b)b.innerHTML=paySummaryHtml(sub,el("caddr").value);}
 async function checkout(){
   const addr=(el("caddr").value||"").trim();
   if(addr.length<8){el("cmsg").innerHTML=`<p class="err">Çatdırılma ünvanını tam yaz (küçə/mənzil daxil).</p>`;return;}
