@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260709"></script>
+<script src="config.js?v=20260710"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -655,6 +655,8 @@ function calcDelivery(sub,addr){
 }
 // Sonuncu unvan yadda qalir (abunelik ve novbeti sifarisler ucun).
 const ADDR={get:()=>localStorage.getItem("delivery_addr")||"",set:v=>localStorage.setItem("delivery_addr",v)};
+// Tetbiq olunmus endirim kodu (backend /promo/validate/ ile yoxlanir).
+const PROMO={code:"",discount:0};
 function showPay(sub){
   // REAL SATIS REJIMI: hazirda yalniz QAPIDA ODENIS aktivdir.
   // Kart odenisi bank (Payriff/Epoint) inteqrasiyasi qosulanda acilacaq —
@@ -672,6 +674,12 @@ function showPay(sub){
           <div style="font-size:20px">💳</div><b style="font-size:13px">Onlayn kart</b>
           <div class="muted" style="font-size:11px">Tezliklə (bank inteqrasiyası)</div></div>
       </div>
+      <label style="margin-top:8px">Endirim kodu</label>
+      <div style="display:flex;gap:6px">
+        <input class="f" id="promocode" placeholder="Kodu daxil et" value="${esc(PROMO.code)}" style="flex:1;text-transform:uppercase;margin:0" onkeydown="if(event.key==='Enter'){event.preventDefault();applyPromo(${sub})}">
+        <button class="btn ghost" style="width:auto;padding:0 16px;margin:0;white-space:nowrap" onclick="applyPromo(${sub})">Tətbiq et</button>
+      </div>
+      <div id="promomsg"></div>
       <div class="row" style="margin-top:8px"><span>${t("total")}</span><b>${azn(sub)}</b></div>
       <div id="paysummary">${paySummaryHtml(sub,ADDR.get())}</div>
       <button class="btn" style="margin-top:10px" onclick="checkout()">Sifarişi təsdiqlə 💵</button>
@@ -680,13 +688,31 @@ function showPay(sub){
 }
 function paySummaryHtml(sub,addr){
   const d=calcDelivery(sub,addr);
+  const disc=Math.min(PROMO.discount||0,sub);
   return `
+    ${disc?`<div class="row" style="margin-top:4px;color:var(--ok)"><span>Endirim (${esc(PROMO.code)})</span><span>−${azn(disc)}</span></div>`:""}
     <div class="row muted" style="margin-top:4px"><span>${t("delivery")}${d.cross?" (zonalararası)":""}</span>
       ${d.fee?`<span>${azn(d.fee)}</span>`:`<span style="color:var(--ok)">Pulsuz ✓</span>`}</div>
     ${d.fee?`<div class="muted" style="font-size:11px;text-align:right">${azn(d.free)}-dən yuxarı çatdırılma pulsuzdur</div>`:""}
-    <div class="row" style="margin-top:6px;font-size:18px"><b>Yekun</b><b style="color:var(--price)">${azn(sub+d.fee)}</b></div>`;
+    <div class="row" style="margin-top:6px;font-size:18px"><b>Yekun</b><b style="color:var(--price)">${azn(sub-disc+d.fee)}</b></div>`;
 }
 function updatePaySummary(sub){const b=el("paysummary");if(b)b.innerHTML=paySummaryHtml(sub,el("caddr").value);}
+// Endirim kodunu backend-də yoxla və səbətə tətbiq et.
+async function applyPromo(sub){
+  const code=(el("promocode").value||"").trim().toUpperCase();
+  const msg=el("promomsg");
+  if(!code){PROMO.code="";PROMO.discount=0;if(msg)msg.innerHTML="";updatePaySummary(sub);return;}
+  if(msg)msg.innerHTML=`<p class="muted" style="font-size:12px;margin:4px 0">Yoxlanılır...</p>`;
+  const r=await api("/promo/validate/",{method:"POST",body:JSON.stringify({code,subtotal_qepik:sub})});
+  if(r.ok&&r.data&&r.data.valid){
+    PROMO.code=code;PROMO.discount=r.data.discount_qepik||0;
+    if(msg)msg.innerHTML=`<p style="color:var(--ok);font-size:12px;margin:4px 0">✓ Endirim tətbiq olundu (−${azn(PROMO.discount)})</p>`;
+  }else{
+    PROMO.code="";PROMO.discount=0;
+    if(msg)msg.innerHTML=`<p class="err" style="font-size:12px;margin:4px 0">${esc(r.data?.detail||"Kod etibarsızdır")}</p>`;
+  }
+  updatePaySummary(sub);
+}
 async function checkout(){
   const addr=(el("caddr").value||"").trim();
   if(addr.length<8){el("cmsg").innerHTML=`<p class="err">Çatdırılma ünvanını tam yaz (küçə/mənzil daxil).</p>`;return;}
@@ -696,13 +722,16 @@ async function checkout(){
   const byMarket={};
   Object.values(S.cart).forEach(c=>{(byMarket[c.p.market]=byMarket[c.p.market]||[]).push(c);});
   const created=[];
+  let promoLeft=PROMO.code; // Kod yalnız ilk sifarişə (bir dəfə) tətbiq olunur
   for(const [mid,items] of Object.entries(byMarket)){
-    const body=JSON.stringify({market:+mid,delivery_address:addr,payment_method:"COD",
-      items:items.map(c=>({product:c.p.id,quantity:c.qty}))});
-    const r=await api("/orders/",{method:"POST",body});
+    const payload={market:+mid,delivery_address:addr,payment_method:"COD",
+      items:items.map(c=>({product:c.p.id,quantity:c.qty}))};
+    if(promoLeft){payload.promo_code=promoLeft;promoLeft="";}
+    const r=await api("/orders/",{method:"POST",body:JSON.stringify(payload)});
     if(!r.ok){el("cmsg").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;return;}
     created.push(r.data.id);
   }
+  PROMO.code="";PROMO.discount=0;
   S.cart={};S.pay={created};await refreshUnread();S.view="paydone";renderNav();renderPayDone(el("root"));
 }
 function renderPayDone(r){
