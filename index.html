@@ -214,14 +214,9 @@ function species(name,petType){
   return{e:"🐾",k:"other",bg:"#f2ede4"};
 }
 // --- Saxta (placeholder) məlumatlar — id-ye görə sabit ---
-const rating=id=>(4.0+(id*7%10)/10).toFixed(1);
-const sold=id=>20+(id*37%380);
-const sponsored=id=>id%5===0;
-const CPOOL=[["Aygün","Çox keyfiyyətlidir, itim çox sevdi."],["Elvin","Sürətli çatdırılma, təşəkkürlər."],
-  ["Nigar","Qiymətinə görə əladır, tövsiyə edirəm."],["Rəşad","Pişiyim bəyəndi, yenidən alacam."],
-  ["Günel","Qablaşdırma səliqəli idi."],["Tural","Keyfiyyət gözlədiyimdən yaxşı çıxdı."]];
-const comments=id=>[CPOOL[id%CPOOL.length],CPOOL[(id+2)%CPOOL.length]];
-const stars=r=>{const f=Math.round(r);return "★".repeat(f)+"☆".repeat(5-f);};
+// REAL SATIS REJIMI: uydurma reytinq/rey/satis sayi YOXDUR (KOBIA/etimad).
+// Real rey sistemi novbeti merheledir. Sponsorluq backend-den (admin teyin edir).
+const sponsored=id=>{const p=findP(id);return !!(p&&p.is_sponsored);};
 
 // ================= Naviqasiya =================
 function go(v){S.view=v;S.pid=null;S.pay=null;window.scrollTo(0,0);render();}
@@ -426,7 +421,6 @@ function pcard(p){
     <div class="pinfo">
       <div class="pname">${esc(p.name)}</div>
       <div class="pshop">${esc(marketName(p.market))}</div>
-      <div class="prate">★ ${rating(p.id)} · ${sold(p.id)} ${t("bought")}</div>
       <div class="pprice">${p.price_azn}</div>
     </div></div>`;
 }
@@ -526,7 +520,6 @@ function renderProduct(r){
   const sp=species(p.name,p.pet_type);
   const like=S.products.filter(x=>x.id!==p.id).slice(0,4);
   const sim=S.products.filter(x=>x.id!==p.id&&species(x.name,x.pet_type).k===sp.k).slice(0,4);
-  const cs=comments(p.id);
   r.innerHTML=`
   <div class="top"><div class="brand"><button class="back" onclick="go('home')">‹</button><span>${esc(p.name)}</span><span></span></div></div>
   <div class="detail">
@@ -537,7 +530,7 @@ function renderProduct(r){
       <div onclick="openShop(${p.market})" style="cursor:pointer;color:var(--brand);font-weight:600;font-size:13px">🏪 ${esc(marketName(p.market)||p.market_name||"Mağaza")} — bütün məhsulları gör ›</div>
       <div class="row" style="margin-top:8px">
         <span class="pprice" style="font-size:22px">${p.price_azn}</span>
-        <span class="prate">★ ${rating(p.id)} · ${sold(p.id)} ${t("bought")}</span>
+        <span class="muted" style="font-size:12px">${p.stock_qty>0?"✅ Stokda var":"⛔ Stokda yoxdur"}</span>
       </div>
       <div style="margin-top:10px"><span class="tag">${p.category}</span> <span class="tag">Stok: ${p.stock_qty}</span></div>
       <div style="margin-top:12px"><button class="btn" onclick="addCart(${p.id})">🛒 ${t("add")}</button></div>
@@ -550,7 +543,7 @@ function renderProduct(r){
     ${p.description?`<div class="card"><h2 style="margin:0 0 6px">📋 Məhsul haqqında</h2><p style="margin:0;white-space:pre-line">${esc(p.description)}</p></div>`:""}
     <div class="card">
       <h2 style="margin:0 0 6px">${t("comments")}</h2>
-      ${cs.map(([n,txt])=>`<div class="comment"><div class="cname">${n} <span class="stars">★★★★★</span></div><div class="muted">${txt}</div></div>`).join("")}
+      <p class="muted" style="margin:0">Rəylər yalnız real alıcılardan olacaq — bu məhsulu alan ilk sən ol! 🐾</p>
     </div>
     <h2 style="margin-left:14px">${t("also")}</h2>
     <div class="grid">${like.map(pcard).join("")}</div>
@@ -584,8 +577,14 @@ function subBtn(pid){
 }
 async function doProductSub(pid){
   const p=findP(pid); if(!p)return;
+  let addr=ADDR.get();
+  if(!addr||addr.length<8){
+    addr=(prompt("Çatdırılma ünvanını yaz (küçə/mənzil daxil):")||"").trim();
+    if(addr.length<8){toast("Ünvan tam yazılmadı");return;}
+    ADDR.set(addr);
+  }
   const body=JSON.stringify({market:p.market,interval:"MONTHLY",
-    delivery_address:"Bakı-Sumqayıt",items:[{product:pid,quantity:1}]});
+    delivery_address:addr,items:[{product:pid,quantity:1}]});
   const r=await api("/subscriptions/",{method:"POST",body});
   if(r.ok){toast("Abunə olundu! Hər ay qapında 📦");render();}
   else{const box=el("subpanel");if(box)box.innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;}
@@ -622,32 +621,46 @@ function renderCart(r){
   </div>`;
 }
 function chQty(id,d){const c=S.cart[id];if(!c)return;c.qty+=d;if(c.qty<=0)delete S.cart[id];render();}
+// Sonuncu unvan yadda qalir (abunelik ve novbeti sifarisler ucun).
+const ADDR={get:()=>localStorage.getItem("delivery_addr")||"",set:v=>localStorage.setItem("delivery_addr",v)};
 function showPay(sub){
-  // Catdirilma hazirda PULSUZ (real haqq sonra backend-e baglananda elave olunacaq).
-  // Gosterilen Yekun tam olaraq tutulan mebleq ile eynidir (uygunsuzluq olmasin).
+  // REAL SATIS REJIMI: hazirda yalniz QAPIDA ODENIS aktivdir.
+  // Kart odenisi bank (Payriff/Epoint) inteqrasiyasi qosulanda acilacaq —
+  // fake kart tutmasi ile "odenildi" demek olmaz.
   el("paybox").innerHTML=`
     <div style="margin-top:12px;border-top:1px dashed var(--line);padding-top:10px">
-      <div class="row"><span>${t("total")}</span><b>${azn(sub)}</b></div>
+      <label>Çatdırılma ünvanı</label>
+      <input class="f" id="caddr" placeholder="Məs: Bakı, Nəsimi r., Azadlıq pr. 12, m. 45" value="${esc(ADDR.get())}">
+      <label>Ödəniş üsulu</label>
+      <div style="display:flex;gap:8px;margin:6px 0 4px">
+        <div style="flex:1;border:2px solid var(--brand);border-radius:12px;padding:10px;text-align:center;background:#fff7e6">
+          <div style="font-size:20px">💵</div><b style="font-size:13px">Qapıda ödəniş</b>
+          <div class="muted" style="font-size:11px">Nağd və ya kartla, çatdırılanda</div></div>
+        <div style="flex:1;border:1.5px solid var(--line);border-radius:12px;padding:10px;text-align:center;opacity:.55">
+          <div style="font-size:20px">💳</div><b style="font-size:13px">Onlayn kart</b>
+          <div class="muted" style="font-size:11px">Tezliklə (bank inteqrasiyası)</div></div>
+      </div>
+      <div class="row" style="margin-top:8px"><span>${t("total")}</span><b>${azn(sub)}</b></div>
       <div class="row muted" style="margin-top:4px"><span>${t("delivery")}</span><span style="color:var(--ok)">Pulsuz</span></div>
       <div class="row" style="margin-top:6px;font-size:18px"><b>Yekun</b><b style="color:var(--price)">${azn(sub)}</b></div>
-      <button class="btn" style="margin-top:10px" onclick="checkout()">${t("confirm")}</button>
+      <button class="btn" style="margin-top:10px" onclick="checkout()">Sifarişi təsdiqlə 💵</button>
       <div id="cmsg"></div>
     </div>`;
 }
 async function checkout(){
+  const addr=(el("caddr").value||"").trim();
+  if(addr.length<8){el("cmsg").innerHTML=`<p class="err">Çatdırılma ünvanını tam yaz (küçə/mənzil daxil).</p>`;return;}
+  ADDR.set(addr);
   el("cmsg").innerHTML=`<p class="muted">Göndərilir...</p>`;
   // Səbəti marketə görə qruplaşdır (backend hər sifarişdə tək market tələb edir)
   const byMarket={};
   Object.values(S.cart).forEach(c=>{(byMarket[c.p.market]=byMarket[c.p.market]||[]).push(c);});
   const created=[];
   for(const [mid,items] of Object.entries(byMarket)){
-    const body=JSON.stringify({market:+mid,delivery_address:"Bakı-Sumqayıt",
+    const body=JSON.stringify({market:+mid,delivery_address:addr,payment_method:"COD",
       items:items.map(c=>({product:c.p.id,quantity:c.qty}))});
     const r=await api("/orders/",{method:"POST",body});
     if(!r.ok){el("cmsg").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;return;}
-    // Escrow tutmasi UGURLU olmasa, yalandan "odenildi" DEME.
-    const h=await api(`/orders/${r.data.id}/hold_payment/`,{method:"POST"});
-    if(!h.ok){el("cmsg").innerHTML=`<p class="err">Ödəniş alınmadı: ${esc(h.data?.detail||"server cavab vermədi")}. Sifariş #${r.data.id} gözləmədə saxlanıldı.</p>`;return;}
     created.push(r.data.id);
   }
   S.cart={};S.pay={created};await refreshUnread();S.view="paydone";renderNav();renderPayDone(el("root"));
@@ -656,7 +669,7 @@ function renderPayDone(r){
   r.innerHTML=`<div class="top"><div class="brand"><span>Təsdiqləndi</span></div></div>
   <div class="empty"><div class="big">✅</div>
     <h2>Sifarişiniz qəbul olundu!</h2>
-    <p class="muted">Ödəniş escrow-da saxlanıldı. Kuryer çatdıranda market payı avtomatik bölünəcək.</p>
+    <p class="muted">Ödənişi <b>çatdırılanda</b> edəcəksən — nağd və ya kartla (kuryerdə). 💵</p>
     <p class="muted">Sifariş nömrələri: ${S.pay.created.map(i=>"#"+i).join(", ")}</p>
     <button class="btn" style="max-width:220px;margin:14px auto 0" onclick="go('home')">${t("home")}</button>
     <button class="btn ghost" style="max-width:220px;margin:8px auto 0" onclick="go('orders')">${t("myorders")}</button>
@@ -672,10 +685,12 @@ async function renderOrders(r){
   el("os").innerHTML=list.length?list.map(o=>{
     const items=(o.items||[]).map(i=>`${i.quantity}× ${esc(i.product_name)}`).join(", ");
     let act="";
-    if(o.status==="CREATED")act=ob(o.id,"hold_payment","Ödə (escrow)");
+    const cod=o.payment_method==="COD";
+    if(o.status==="CREATED"&&staff)act=ob(o.id,"out_for_delivery","Yola çıxdı");
     else if(o.status==="PAYMENT_HELD"&&staff)act=ob(o.id,"out_for_delivery","Yola çıxdı");
-    else if(o.status==="OUT_FOR_DELIVERY"&&staff)act=ob(o.id,"confirm_delivery","Çatdırıldı → böl");
-    else if(o.status==="RELEASED"&&staff)act=ob(o.id,"payout","Marketə ödə");
+    else if(o.status==="OUT_FOR_DELIVERY"&&staff)act=ob(o.id,"confirm_delivery",cod?"Çatdırıldı (nağd alındı)":"Çatdırıldı → böl");
+    else if(o.status==="RELEASED"&&staff&&!cod)act=ob(o.id,"payout","Marketə ödə");
+    if(o.status==="CREATED"&&!staff)act=`<p class="muted" style="margin:6px 0 0">Sifarişin hazırlanır — ödənişi çatdırılanda edəcəksən 💵</p>`;
     return `<div class="card" style="margin:10px 0"><div class="row"><b>Sifariş #${o.id}</b>
       <span class="tag">${o.status_display}</span></div>
       <div class="muted">${items}</div>
