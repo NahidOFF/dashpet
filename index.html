@@ -34,7 +34,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260711"></script>
+<script src="config.js?v=20260712"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -871,13 +871,13 @@ async function doLogout(){await api("/auth/logout/",{method:"POST"});T.clear();S
 
 const FAQ=[
   ["Çatdırılma nə qədər vaxt aparır?","Bakı-Sumqayıt üzrə sifarişlər adətən seçdiyiniz zaman pəncərəsində (məs. bu gün 16:00–20:00) çatdırılır."],
-  ["Ödənişi necə edə bilərəm?","Kartla ödəyirsiniz. Pul çatdırılma təsdiqlənənə qədər təhlükəsiz saxlanılır (escrow), sonra market payı avtomatik köçürülür."],
-  ["Abunəlik necə işləyir?","Yem və ya qum üçün aylıq/həftəlik plan qurursunuz; saxlanmış kartla avtomatik tutulur və heyvanınızın adı ilə çatdırılır."],
+  ["Ödənişi necə edə bilərəm?","Hazırda <b>qapıda ödəniş</b> — sifariş çatdırılanda kuryerə nağd və ya kartla ödəyirsiniz. Onlayn kart ödənişi tezliklə əlavə olunacaq."],
+  ["Abunəlik necə işləyir?","Yem və ya qum üçün aylıq/həftəlik plan qurursunuz; hər dövrdə heyvanınızın adı ilə çatdırılır və qapıda ödəyirsiniz."],
   ["Məhsulu geri qaytara bilərəm?","Bəli. Çatdırılmadan əvvəl ləğv edə, çatdırıldıqdan sonra isə uyğun hallarda geri qaytarma tələb edə bilərsiniz."],
   ["Baytar çağırışı var?","Heyvanınız pis olanda PetAI köməkçisi vəziyyəti qiymətləndirir və lazım olsa partnyor klinikaya yönləndirir."],
   ["Hansı zonalara çatdırırsınız?","Hazırda yalnız Bakı və Sumqayıt. Yeni zonalar tezliklə əlavə olunacaq."],
-  ["Sifarişimi necə izləyə bilərəm?","'Sifarişlərim' bölməsindən statusu görürsünüz: ödəniş tutuldu, yolda, çatdırıldı."],
-  ["Kart məlumatlarım təhlükəsizdir?","Bəli. Kart nömrəniz bizdə saxlanılmır — yalnız lisenziyalı ödəniş provayderinin təhlükəsiz yaddaşında olur."],
+  ["Sifarişimi necə izləyə bilərəm?","'Sifarişlərim' bölməsindən statusu görürsünüz: hazırlanır, yolda, çatdırıldı."],
+  ["Evə vet çağırışı necə ödənilir?","Qapıda nağd — vet gələndə ödəyirsiniz. Qiymət vetin öz qiyməti üstəgəl kiçik platforma haqqıdır və çağırışdan əvvəl göstərilir."],
   ["Hesabımı necə silə bilərəm?","Müştəri xidməti ilə əlaqə saxlayın; hesabınız və məlumatlarınız tələbinizlə silinir."],
   ["AI köməkçi diaqnoz qoyur?","Xeyr. O yalnız təcililik səviyyəsini qiymətləndirir (triaj) və lazım olsa vetə yönləndirir — diaqnoz və dərman vermir."],
 ];
@@ -1229,9 +1229,11 @@ async function renderVet(r){
         🚗 <b>Vet təqribən ${eta} saat sonra qapınızda olacaq.</b></div>
       <label>Ünvan</label>
       <input class="f" id="vaddr" placeholder="Məs: Bakı, Nəsimi r., Azadlıq pr. 12" value="${esc(VET.addr||"")}">
-      <div class="row" style="margin:10px 0"><span>Evə baxış haqqı</span><b class="pprice">30.00 AZN</b></div>
+      <div class="row" style="margin:10px 0"><span>Evə baxış haqqı</span><b class="pprice">${esc(v.price_azn||"—")}</b></div>
+      <div class="card" style="margin:0 0 6px;background:#eefaf0;border-color:var(--ok);padding:10px 12px">
+        💵 <b>Qapıda ödəniş</b> — vet gələndə <b>nağd</b> ödəyəcəksiniz.</div>
       <div id="vmsg"></div>
-      <button class="btn" onclick="vetPay()">Ödə və çağır 🩺</button>
+      <button class="btn" onclick="vetPay()">Təsdiqlə və çağır 🩺</button>
     </div></div>`;
     return;
   }
@@ -1241,6 +1243,7 @@ async function renderVet(r){
     <div style="font-size:52px">✅</div>
     <h2>Çağırış təsdiqləndi!</h2>
     <p><b>${esc(c.vet_name||"")}</b> təqribən <b>${c.eta_hours||2} saat</b> sonra qapınızda olacaq.</p>
+    <p class="muted">💵 Ödənişi vet gələndə <b>nağd</b> edəcəksiniz${c.price_azn?` — ${esc(c.price_azn)}`:""}.</p>
     <p class="muted">Vetə bildiriş göndərildi 📲 (SMS/zəng inteqrasiyası tezliklə)</p>
     <button class="btn" onclick="vetReset();go('home')">Ana səhifə</button>
   </div></div>`;
@@ -1269,13 +1272,13 @@ function vetMap(){
 async function vetPay(){
   VET.addr=(el("vaddr").value||"").trim();
   if(!VET.addr){el("vmsg").innerHTML=`<p class="err">Ünvanı yaz.</p>`;return;}
-  el("vmsg").innerHTML=`<p class="muted">Ödənilir...</p>`;
+  el("vmsg").innerHTML=`<p class="muted">Göndərilir...</p>`;
   const r=await api("/vet-calls/",{method:"POST",body:JSON.stringify({
     vet:VET.sel.id,condition:VET.cond,urgency:VET.urgency,address:VET.addr,pet:VET.pet||null})});
   if(!r.ok){el("vmsg").innerHTML=`<p class="err">${esc(JSON.stringify(r.data))}</p>`;return;}
-  const pay=await api(`/vet-calls/${r.data.id}/pay/`,{method:"POST"});
-  if(!pay.ok){el("vmsg").innerHTML=`<p class="err">${esc(pay.data?.detail||"Ödəniş alınmadı")}</p>`;return;}
-  VET.call=pay.data;VET.step=4;render();
+  const conf=await api(`/vet-calls/${r.data.id}/confirm/`,{method:"POST"});
+  if(!conf.ok){el("vmsg").innerHTML=`<p class="err">${esc(conf.data?.detail||"Çağırış təsdiqlənmədi")}</p>`;return;}
+  VET.call=conf.data;VET.step=4;render();
 }
 async function renderVetIncoming(r){
   r.innerHTML=`<div class="top"><div class="brand"><span>🩺 Çağırışlarım (Vet)</span>
