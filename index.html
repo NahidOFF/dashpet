@@ -34,7 +34,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260714"></script>
+<script src="config.js?v=20260715"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -1287,6 +1287,16 @@ async function renderVetIncoming(r){
 }
 
 // ================= PetAI — çat interfeysi (Settings-dən) =================
+// PetAI interfeys mətnləri (seçilmiş dilə görə).
+const PAI_T={
+  az:{hi:"Salam! Mən PetAI 🐾",intro:"Heyvanının sağlamlığı, yemi, baxımı və əşyaları haqqında soruş. Bu, <b>diaqnoz deyil</b> — yalnız istiqamətdir.",
+      ask:"Heyvanın haqqında soruş...",clear:"Təmizlə",thinking:"Düşünür...",now:"DƏRHAL VETƏ",err:"Xəta baş verdi. Yenidən yoxla."},
+  en:{hi:"Hi! I'm PetAI 🐾",intro:"Ask about your pet's health, food, care and supplies. This is <b>not a diagnosis</b> — only guidance.",
+      ask:"Ask about your pet...",clear:"Clear",thinking:"Thinking...",now:"VET NOW",err:"Something went wrong. Try again."},
+  ru:{hi:"Привет! Я PetAI 🐾",intro:"Спросите о здоровье, корме, уходе и товарах для питомца. Это <b>не диагноз</b> — только рекомендация.",
+      ask:"Спросите о питомце...",clear:"Очистить",thinking:"Думаю...",now:"СРОЧНО К ВЕТУ",err:"Произошла ошибка. Попробуйте снова."},
+};
+const pai=k=>(PAI_T[LANG.get()]||PAI_T.az)[k];
 var PETAI=[];
 try{PETAI=JSON.parse(localStorage.getItem("petai_chat")||"[]");}catch(e){PETAI=[];}
 function petaiSave(){try{localStorage.setItem("petai_chat",JSON.stringify(PETAI.slice(-40)));}catch(e){}}
@@ -1305,7 +1315,7 @@ function petaiBubble(m){
   return `<div style="display:flex;margin:6px 0;gap:8px">
     <div style="flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);display:flex;align-items:center;justify-content:center;font-size:15px">🐾</div>
     <div class="card" style="margin:0;max-width:82%;padding:10px 12px">
-      <span class="pill u-${esc(d.urgency)}" style="font-size:11px">${esc(d.urgency)}${d.vet_now?" · DƏRHAL VETƏ":""}</span>
+      <span class="pill u-${esc(d.urgency)}" style="font-size:11px">${esc(d.urgency)}${d.vet_now?" · "+pai("now"):""}</span>
       <p style="margin:8px 0 4px"><b>${esc(d.summary)}</b></p>
       <p style="margin:0">${esc(d.recommended_action)}</p>
       ${(d.red_flags||[]).length?`<p class="err" style="margin:6px 0 0">⚠ ${d.red_flags.map(esc).join(", ")}</p>`:""}
@@ -1316,17 +1326,17 @@ function petaiChatHtml(){
   const greet=`<div style="display:flex;margin:6px 0;gap:8px">
     <div style="flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);display:flex;align-items:center;justify-content:center;font-size:15px">🐾</div>
     <div class="card" style="margin:0;max-width:82%;padding:10px 12px">
-      <p style="margin:0"><b>Salam! Mən PetAI 🐾</b></p>
-      <p style="margin:6px 0 0">Heyvanının sağlamlığı, yemi, baxımı və əşyaları haqqında soruş. Bu, <b>diaqnoz deyil</b> — yalnız istiqamətdir.</p>
+      <p style="margin:0"><b>${pai("hi")}</b></p>
+      <p style="margin:6px 0 0">${pai("intro")}</p>
     </div></div>`;
   return greet+PETAI.map(petaiBubble).join("");
 }
 async function renderTriageView(r){
   r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>🐾 PetAI</span>
-    <button class="alink" style="padding:0" onclick="PETAI=[];petaiSave();render()">Təmizlə</button></div></div>
+    <button class="alink" style="padding:0" onclick="PETAI=[];petaiSave();render()">${pai("clear")}</button></div></div>
   <div id="chat" style="padding:12px 12px 8px">${petaiChatHtml()}</div>
   <div style="position:fixed;bottom:66px;left:0;right:0;max-width:520px;margin:0 auto;background:#fff;border-top:1px solid var(--line);padding:8px 10px;display:flex;gap:8px;z-index:25">
-    <input class="f" id="tq" style="margin:0" placeholder="Heyvanın haqqında soruş..." onkeydown="if(event.key==='Enter')petaiSend()">
+    <input class="f" id="tq" style="margin:0" placeholder="${pai("ask")}" onkeydown="if(event.key==='Enter')petaiSend()">
     <button class="btn" style="width:auto;padding:0 18px" onclick="petaiSend()">➤</button>
   </div><div style="height:70px"></div>`;
   window.scrollTo(0,document.body.scrollHeight);
@@ -1335,11 +1345,11 @@ async function petaiSend(){
   const inp=el("tq"); const q=(inp.value||"").trim(); if(!q)return;
   inp.value="";
   PETAI.push({role:"u",text:q});
-  el("chat").innerHTML=petaiChatHtml()+`<div style="display:flex;margin:6px 0;gap:8px"><div style="flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);display:flex;align-items:center;justify-content:center;font-size:15px">🐾</div><p class="muted" style="margin:6px 0">Düşünür...</p></div>`;
+  el("chat").innerHTML=petaiChatHtml()+`<div style="display:flex;margin:6px 0;gap:8px"><div style="flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);display:flex;align-items:center;justify-content:center;font-size:15px">🐾</div><p class="muted" style="margin:6px 0">${pai("thinking")}</p></div>`;
   window.scrollTo(0,document.body.scrollHeight);
-  const r=await api("/triage/",{method:"POST",body:JSON.stringify({message:q})});
+  const r=await api("/triage/",{method:"POST",body:JSON.stringify({message:q,lang:LANG.get()})});
   if(r.ok)PETAI.push({role:"a",d:r.data});
-  else PETAI.push({role:"a",err:r.data?.detail||"Xəta baş verdi. Yenidən yoxla."});
+  else PETAI.push({role:"a",err:r.data?.detail||pai("err")});
   petaiSave();
   const c=el("chat"); if(c){c.innerHTML=petaiChatHtml();window.scrollTo(0,document.body.scrollHeight);}
 }
