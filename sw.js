@@ -5,7 +5,7 @@
  * (istifadəçi köhnə versiyada "ilişib" qalmasın). İnternet yoxdursa,
  * yalnız onda keşdən veririk. API sorğuları HEÇ vaxt keşlənmir.
  */
-const CACHE = "petekh-v1";
+const CACHE = "petekh-v2";
 // Oflayn halda lazım olan minimal "qabıq" (app shell) + ikonlar.
 const SHELL = [
   "/",
