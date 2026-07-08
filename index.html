@@ -2,14 +2,39 @@
 <html lang="az">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Petekh</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Petekh — ev heyvanların üçün hər şey</title>
+<meta name="description" content="Ev heyvanları üçün market, çatdırılma, evə vet və PetAI köməkçisi. Bakı–Sumqayıt.">
 <meta name="theme-color" content="#F49B0D">
+
+<!-- Yüklənən tətbiq (PWA) -->
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Petekh">
+
+<!-- Link paylaşılanda görünən kart (WhatsApp/Instagram/Facebook) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Petekh">
+<meta property="og:title" content="Petekh — ev heyvanların üçün hər şey">
+<meta property="og:description" content="Market · Çatdırılma · Evə vet · PetAI. Bakı–Sumqayıt.">
+<meta property="og:url" content="https://petekh.com/">
+<meta property="og:image" content="https://petekh.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="az_AZ">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Petekh — ev heyvanların üçün hər şey">
+<meta name="twitter:description" content="Market · Çatdırılma · Evə vet · PetAI. Bakı–Sumqayıt.">
+<meta name="twitter:image" content="https://petekh.com/og.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='pg' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23F7B21B'/%3E%3Cstop offset='1' stop-color='%23F08A12'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M83.3 63.8 63.8 83.3 36.2 83.3 16.7 63.8 16.7 36.2 36.2 16.7 63.8 16.7 83.3 36.2Z' fill='none' stroke='url(%23pg)' stroke-width='13' stroke-dasharray='24.5 3.1'/%3E%3Cellipse cx='50' cy='56' rx='11' ry='8.5' fill='%232E3240'/%3E%3Cellipse cx='38.5' cy='43' rx='4.8' ry='6.4' fill='%232E3240' transform='rotate(-22 38.5 43)'/%3E%3Cellipse cx='50' cy='39' rx='4.8' ry='6.6' fill='%232E3240'/%3E%3Cellipse cx='61.5' cy='43' rx='4.8' ry='6.4' fill='%232E3240' transform='rotate(22 61.5 43)'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260710"></script>
+<script src="config.js?v=20260711"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -1354,6 +1379,50 @@ render=async function(){
 };
 async function init(){ if(T.get())await boot(); render(); }
 init();
+
+// ================= Yüklənən tətbiq (PWA) =================
+// Service worker-i qeydiyyatdan keçir (oflayn + sürət + "yüklə" imkanı).
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));
+}
+// "Ana ekrana əlavə et" — Android/masaüstü brauzer imkan verəndə banner göstər.
+let _deferredInstall=null;
+function isStandalone(){return window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;}
+function dismissInstall(){const b=el("installbar");if(b)b.remove();try{localStorage.setItem("install_dismiss",Date.now());}catch(e){}}
+function showInstallBar(html){
+  if(isStandalone()||el("installbar"))return;
+  const last=+(localStorage.getItem("install_dismiss")||0);
+  if(last&&Date.now()-last<3*24*3600*1000)return; // 3 gün ərzində təkrar göstərmə
+  const bar=document.createElement("div");
+  bar.id="installbar";
+  bar.style.cssText="position:fixed;left:8px;right:8px;bottom:74px;max-width:504px;margin:0 auto;background:#fff;border:1px solid var(--line);box-shadow:0 8px 30px rgba(0,0,0,.16);border-radius:16px;padding:12px 14px;z-index:60;display:flex;align-items:center;gap:12px;font-size:13px";
+  bar.innerHTML=html;
+  document.body.appendChild(bar);
+}
+window.addEventListener("beforeinstallprompt",(e)=>{
+  e.preventDefault(); _deferredInstall=e;
+  showInstallBar(`<div style="width:34px;height:34px;border-radius:9px;background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);flex:0 0 34px;display:flex;align-items:center;justify-content:center;font-size:18px">🐾</div>
+    <div style="flex:1"><b>Petekh-i telefona yüklə</b><div class="muted" style="font-size:11px">App kimi — ana ekrandan bir toxunuşla aç</div></div>
+    <button class="btn" style="width:auto;padding:8px 14px;margin:0" onclick="doInstall()">Yüklə</button>
+    <button class="alink" style="padding:6px" onclick="dismissInstall()">✕</button>`);
+});
+async function doInstall(){
+  if(!_deferredInstall)return dismissInstall();
+  _deferredInstall.prompt();
+  try{await _deferredInstall.userChoice;}catch(e){}
+  _deferredInstall=null; dismissInstall();
+}
+// iOS Safari beforeinstallprompt vermir — ona təlimat göstəririk.
+(function iosHint(){
+  const ua=navigator.userAgent||"";
+  const isIOS=/iphone|ipad|ipod/i.test(ua);
+  const isSafari=isIOS && /safari/i.test(ua) && !/crios|fxios/i.test(ua);
+  if(isIOS && isSafari && !isStandalone()){
+    setTimeout(()=>showInstallBar(`<div style="width:34px;height:34px;border-radius:9px;background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);flex:0 0 34px;display:flex;align-items:center;justify-content:center;font-size:18px">🐾</div>
+      <div style="flex:1"><b>Petekh-i ana ekrana əlavə et</b><div class="muted" style="font-size:11px">Paylaş <span style="font-size:13px">⎋</span> → "Ana ekrana əlavə et"</div></div>
+      <button class="alink" style="padding:6px" onclick="dismissInstall()">✕</button>`),2500);
+  }
+})();
 </script>
 </body>
 </html>
