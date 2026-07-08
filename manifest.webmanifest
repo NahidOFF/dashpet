@@ -1,0 +1,20 @@
+{
+  "name": "Petekh — ev heyvanların üçün hər şey",
+  "short_name": "Petekh",
+  "description": "Ev heyvanları üçün market, çatdırılma, evə vet və PetAI köməkçisi. Bakı–Sumqayıt.",
+  "lang": "az",
+  "dir": "ltr",
+  "start_url": "/?src=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf7f0",
+  "theme_color": "#F49B0D",
+  "categories": ["shopping", "lifestyle", "medical"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
