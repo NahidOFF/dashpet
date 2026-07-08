@@ -34,7 +34,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260716"></script>
+<script src="config.js?v=20260717"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -574,6 +574,17 @@ function renderProduct(r){
 }
 function addCart(id){
   const p=findP(id); if(!p)return;
+  // TƏK-MAĞAZA QAYDASI: bir səbətdə yalnız bir mağazanın məhsulları ola bilər.
+  // Səbəb: 1 sifariş = 1 götürmə nöqtəsi → kuryer real və ucuz işləsin (Wolt Drive
+  // kimi: bir dəfəyə bir mağazadan). Fərqli mağaza seçilsə, səbəti sıfırlamağı təklif edirik.
+  const cur=Object.values(S.cart)[0];
+  if(cur && cur.p.market!==p.market){
+    const curShop=marketName(cur.p.market)||"başqa mağaza";
+    const newShop=marketName(p.market)||"bu mağaza";
+    const ok=confirm(`Səbətində "${curShop}" məhsulları var. Petekh-də hər sifariş tək mağazadandır.\n\nSəbəti təmizləyib "${newShop}" ilə başlayaq?`);
+    if(!ok)return;
+    S.cart={};
+  }
   const c=S.cart[id]||{qty:0,p};c.qty++;S.cart[id]=c;
   renderNav(); toast(t("add")+" ✓");
 }
@@ -621,6 +632,8 @@ function renderCart(r){
   r.innerHTML=`
   <div class="top"><div class="brand"><span>${t("card")}</span><span class="loc">${cartCount()} məhsul</span></div></div>
   <div style="padding-top:6px">
+    <div class="muted" style="display:flex;align-items:center;gap:6px;margin:0 14px 4px;font-size:13px">
+      🏪 <b style="color:var(--ink)">${esc(marketName(items[0].p.market))}</b> · tək mağazadan</div>
     ${items.map(c=>{const sp=species(c.p.name,c.p.pet_type);return `
       <div class="citem">
         <div class="ci" style="background:${sp.bg}">${sp.e}</div>
