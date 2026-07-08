@@ -9,8 +9,8 @@
 
 <!-- Yüklənən tətbiq (PWA) -->
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=2">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=3">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -22,19 +22,19 @@
 <meta property="og:title" content="Petekh — ev heyvanların üçün hər şey">
 <meta property="og:description" content="Market · Çatdırılma · Evə vet · PetAI. Bakı–Sumqayıt.">
 <meta property="og:url" content="https://petekh.com/">
-<meta property="og:image" content="https://petekh.com/og.png?v=2">
+<meta property="og:image" content="https://petekh.com/og.png?v=3">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="az_AZ">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Petekh — ev heyvanların üçün hər şey">
 <meta name="twitter:description" content="Market · Çatdırılma · Evə vet · PetAI. Bakı–Sumqayıt.">
-<meta name="twitter:image" content="https://petekh.com/og.png?v=2">
-<link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png?v=2">
+<meta name="twitter:image" content="https://petekh.com/og.png?v=3">
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260713"></script>
+<script src="config.js?v=20260714"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -310,9 +310,9 @@ function ssoBlock(){
 }
 // ---- Petekh loqosu (petek + pence) — SVG, her olcude iti gorunur ----
 function logoSvg(size){
-  // Əsl Petekh logosu (şəkil) — rekonstruksiya deyil.
-  return `<img src="/logo-mark.png?v=2" width="${size}" height="${size}" alt="Petekh"
-    style="display:block;object-fit:contain;border-radius:22%" aria-hidden="true">`;
+  // Əsl Petekh logosu (şəffaf fon) — rekonstruksiya deyil, arxa fon yoxdur.
+  return `<img src="/logo-mark-t.png?v=3" width="${size}" height="${size}" alt="Petekh"
+    style="display:block;object-fit:contain" aria-hidden="true">`;
 }
 // Menyu/basliq ucun: loqo + saginda logodaki fontda "Petekh"
 function brandLogo(){return `<span class="logotype">${logoSvg(30)}<b>Petekh</b></span>`;}
@@ -1396,7 +1396,7 @@ function showInstallBar(html){
 }
 window.addEventListener("beforeinstallprompt",(e)=>{
   e.preventDefault(); _deferredInstall=e;
-  showInstallBar(`<img src="/logo-mark.png?v=2" alt="" style="width:34px;height:34px;border-radius:9px;flex:0 0 34px;object-fit:contain">
+  showInstallBar(`<img src="/logo-mark-t.png?v=3" alt="" style="width:34px;height:34px;border-radius:9px;flex:0 0 34px;object-fit:contain">
     <div style="flex:1"><b>Petekh-i telefona yüklə</b><div class="muted" style="font-size:11px">App kimi — ana ekrandan bir toxunuşla aç</div></div>
     <button class="btn" style="width:auto;padding:8px 14px;margin:0" onclick="doInstall()">Yüklə</button>
     <button class="alink" style="padding:6px" onclick="dismissInstall()">✕</button>`);
@@ -1413,7 +1413,7 @@ async function doInstall(){
   const isIOS=/iphone|ipad|ipod/i.test(ua);
   const isSafari=isIOS && /safari/i.test(ua) && !/crios|fxios/i.test(ua);
   if(isIOS && isSafari && !isStandalone()){
-    setTimeout(()=>showInstallBar(`<img src="/logo-mark.png?v=2" alt="" style="width:34px;height:34px;border-radius:9px;flex:0 0 34px;object-fit:contain">
+    setTimeout(()=>showInstallBar(`<img src="/logo-mark-t.png?v=3" alt="" style="width:34px;height:34px;border-radius:9px;flex:0 0 34px;object-fit:contain">
       <div style="flex:1"><b>Petekh-i ana ekrana əlavə et</b><div class="muted" style="font-size:11px">Paylaş <span style="font-size:13px">⎋</span> → "Ana ekrana əlavə et"</div></div>
       <button class="alink" style="padding:6px" onclick="dismissInstall()">✕</button>`),2500);
   }
