@@ -34,7 +34,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260720"></script>
+<script src="config.js?v=20260721"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -1168,6 +1168,21 @@ async function renderSellerOrders(r){
 // ================= My Pets — heyvan profilləri =================
 function petEmoji(sp){const o=PETOPTS.find(([k])=>k===sp);return o?o[1]:"🐾";}
 async function loadPets(){const r=await apiAll("/pets/");S.pets=r||[];}
+// Heyvanın insan ili ilə təxmini yaşı (əyləncəli, paylaşılası). Yalnız it/pişik üçün.
+function petAgeYears(birth){if(!birth)return null;const b=new Date(birth);if(isNaN(b))return null;const y=(Date.now()-b.getTime())/(365.25*24*3600*1000);return y>0?y:null;}
+function humanAge(species,birth){
+  const y=petAgeYears(birth);if(y===null)return null;
+  const sp=(species||"").toUpperCase();let h;
+  if(sp==="DOG")h=y<=1?15*y:(y<=2?15+9*(y-1):24+5*(y-2));
+  else if(sp==="CAT")h=y<=1?15*y:(y<=2?15+9*(y-1):24+4*(y-2));
+  else return null;
+  return Math.max(1,Math.round(h));
+}
+async function sharePetAge(name,h){
+  const txt=`${name} insan ili ilə təxminən ${h} yaşındadır! 🐾 Sən də heyvanının yaşını Petekh-də yoxla → petekh.com`;
+  try{ if(navigator.share){await navigator.share({text:txt,url:"https://petekh.com"});return;} }catch(e){}
+  try{ await navigator.clipboard.writeText(txt); toast("Kopyalandı — paylaş! 🐾"); }catch(e){ toast(txt); }
+}
 async function renderMyPets(r){
   r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>🐾 My Pets</span><span></span></div></div>
     <div class="wrap"><button class="btn" onclick="go('addpet')">➕ Heyvan əlavə et</button>
@@ -1180,6 +1195,9 @@ async function renderMyPets(r){
       <div class="muted" style="margin-top:4px">
         ${esc(p.breed||"Cins qeyd olunmayıb")}${p.weight_kg?` · ${p.weight_kg} kq`:""}${p.sex==="MALE"?" · Erkək":p.sex==="FEMALE"?" · Dişi":""}
       </div>
+      ${(function(){const h=humanAge(p.species,p.birth_date);return h?`<div style="margin-top:6px;background:#fff7e6;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;display:flex;justify-content:space-between;align-items:center">
+        <span>🎂 İnsan yaşı ilə təxminən <b>${h}</b></span>
+        <span class="alink" style="font-size:12px" onclick="sharePetAge('${esc(p.name).replace(/'/g,'')}',${h})">paylaş ↗</span></div>`:""})()}
     </div>`).join(""):`<div class="empty"><div class="big">🐾</div><p>Hələ heyvan əlavə etməmisən.<br>Əlavə etsən, sənə uyğun məhsullar tövsiyə edərik!</p></div>`;
 }
 async function delPet(id){
@@ -1354,11 +1372,14 @@ async function renderVetIncoming(r){
 // PetAI interfeys mətnləri (seçilmiş dilə görə).
 const PAI_T={
   az:{hi:"Salam! Mən PetAI 🐾",intro:"Heyvanının sağlamlığı, yemi, baxımı və əşyaları haqqında soruş. Bu, <b>diaqnoz deyil</b> — yalnız istiqamətdir.",
-      ask:"Heyvanın haqqında soruş...",clear:"Təmizlə",thinking:"Düşünür...",now:"DƏRHAL VETƏ",err:"Xəta baş verdi. Yenidən yoxla."},
+      ask:"Heyvanın haqqında soruş...",clear:"Təmizlə",thinking:"Düşünür...",now:"DƏRHAL VETƏ",err:"Xəta baş verdi. Yenidən yoxla.",
+      conf:"Uyğunluq",confnote:"Bu, məlum nümunələrə uyğunluqdur — tibbi əminlik deyil."},
   en:{hi:"Hi! I'm PetAI 🐾",intro:"Ask about your pet's health, food, care and supplies. This is <b>not a diagnosis</b> — only guidance.",
-      ask:"Ask about your pet...",clear:"Clear",thinking:"Thinking...",now:"VET NOW",err:"Something went wrong. Try again."},
+      ask:"Ask about your pet...",clear:"Clear",thinking:"Thinking...",now:"VET NOW",err:"Something went wrong. Try again.",
+      conf:"Match",confnote:"This is pattern match — not medical certainty."},
   ru:{hi:"Привет! Я PetAI 🐾",intro:"Спросите о здоровье, корме, уходе и товарах для питомца. Это <b>не диагноз</b> — только рекомендация.",
-      ask:"Спросите о питомце...",clear:"Очистить",thinking:"Думаю...",now:"СРОЧНО К ВЕТУ",err:"Произошла ошибка. Попробуйте снова."},
+      ask:"Спросите о питомце...",clear:"Очистить",thinking:"Думаю...",now:"СРОЧНО К ВЕТУ",err:"Произошла ошибка. Попробуйте снова.",
+      conf:"Совпадение",confnote:"Это совпадение с шаблонами — не медицинская точность."},
 };
 const pai=k=>(PAI_T[LANG.get()]||PAI_T.az)[k];
 var PETAI=[];
@@ -1383,6 +1404,10 @@ function petaiBubble(m){
       <p style="margin:8px 0 4px"><b>${esc(d.summary)}</b></p>
       <p style="margin:0">${esc(d.recommended_action)}</p>
       ${(d.red_flags||[]).length?`<p class="err" style="margin:6px 0 0">⚠ ${d.red_flags.map(esc).join(", ")}</p>`:""}
+      ${d.confidence?`<div style="margin-top:8px">
+        <div class="muted" style="font-size:11px;display:flex;justify-content:space-between"><span>${pai("conf")}</span><span>${d.confidence}%</span></div>
+        <div style="background:#f0e6d0;border-radius:6px;height:6px;overflow:hidden;margin-top:2px"><div style="width:${d.confidence}%;height:100%;background:${d.confidence>=70?'#2e8b57':(d.confidence>=45?'#F49B0D':'#c0392b')}"></div></div>
+        <div class="muted" style="font-size:10px;margin-top:3px">${pai("confnote")}</div></div>`:""}
       ${prods?`<div style="margin-top:6px;border-top:1px solid var(--line);padding-top:4px">${prods}</div>`:""}
     </div></div>`;
 }
