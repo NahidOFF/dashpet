@@ -34,7 +34,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260718"></script>
+<script src="config.js?v=20260719"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -44,7 +44,13 @@
     --brand:#F49B0D; --brand-d:#D97D06; --price:#d6371f; --line:#f0e8d8;
     --star:#f5a623; --ok:#2e8b57; --danger:#c0392b; --warn:#d98a1f;
   }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  /* Açılışda ağ flash olmasın — html dərhal brend fonunda olsun. */
+  html{background-color:#faf7f0;}
+  /* Uzun sözlər/mətnlər daşmasın (ünvan, məhsul adı və s.). */
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;overflow-wrap:break-word;}
+  #splash{min-height:78vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
+  #splash img{animation:pulse 1.3s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.55;transform:scale(.96)}50%{opacity:1;transform:scale(1)}}
   body{margin:0;background-color:var(--bg);color:var(--ink);
     /* Arxa fon (poster uslubu): kunclerden "boylanan" solgun bal petekleri —
        iri, dolu (pale) altibucaqlar, aralarinda ag bosluq; yalniz uc hissesi
@@ -95,7 +101,7 @@
     font-weight:700;padding:2px 7px;border-radius:8px;border:1px solid #ffd9b3;}
   .pinfo{padding:8px 9px 10px;}
   .pname{font-size:13px;font-weight:600;line-height:1.25;height:34px;overflow:hidden;}
-  .pshop{font-size:11px;color:var(--muted);margin-top:2px;}
+  .pshop{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .prate{font-size:11px;color:var(--star);margin-top:3px;}
   .pprice{font-size:15px;font-weight:800;color:var(--price);margin-top:3px;}
   /* Duymeler */
@@ -149,7 +155,7 @@
 </style>
 </head>
 <body>
-<div class="app" id="root"></div>
+<div class="app" id="root"><div id="splash"><img src="/logo-mark-t.png?v=3" width="76" height="76" alt="Petekh"><div style="color:#8a857c;font-size:13px">Yüklənir…</div></div></div>
 <div class="nav" id="nav"></div>
 
 <script>
@@ -438,7 +444,7 @@ function pimgOk(p){return p.image_data&&/^data:image\/(jpeg|png|webp);base64,[A-
 function pcard(p){
   const sp=species(p.name,p.pet_type);
   return `<div class="pcard" onclick="openProduct(${p.id})">
-    <div class="pimg" style="background:${sp.bg}">${pimgOk(p)?`<img src="${p.image_data}" alt="">`:sp.e}</div>
+    <div class="pimg" style="background:${sp.bg}">${pimgOk(p)?`<img src="${p.image_data}" alt="" onerror="this.parentNode.innerHTML='${sp.e}'">`:sp.e}</div>
     <div class="pinfo">
       <div class="pname">${esc(p.name)}</div>
       <div class="pshop">${esc(marketName(p.market))}</div>
@@ -544,7 +550,7 @@ function renderProduct(r){
   r.innerHTML=`
   <div class="top"><div class="brand"><button class="back" onclick="go('home')">‹</button><span>${esc(p.name)}</span><span></span></div></div>
   <div class="detail">
-    <div class="big" style="background:${sp.bg};position:relative;overflow:hidden">${pimgOk(p)?`<img src="${p.image_data}" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover">`:sp.e}</div>
+    <div class="big" style="background:${sp.bg};position:relative;overflow:hidden">${pimgOk(p)?`<img src="${p.image_data}" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML='${sp.e}'">`:sp.e}</div>
     <div class="card">
       ${sponsored(p.id)?`<span class="pill" style="background:#fff3e0;color:var(--brand-d)">${t("sponsored")}</span>`:""}
       <h2 style="margin:6px 0">${esc(p.name)}</h2>
@@ -807,19 +813,32 @@ async function oAct(id,a){const r=await api(`/orders/${id}/${a}/`,{method:"POST"
 function renderMaps(r){
   r.innerHTML=`<div class="top"><div class="brand"><span>${t("maps")}</span><span class="loc">Bakı–Sumqayıt</span></div></div>
     <div id="map"></div>
-    <p class="muted" style="padding:10px 14px">📍 Sənin evin · 🏪 partnyor zoomarketlər. (Nümunə konumlar — real Google Maps sonra.)</p>`;
+    <div class="muted" style="padding:10px 14px;display:flex;gap:14px;flex-wrap:wrap;font-size:13px">
+      <span>🏠 Sənin evin</span><span>🏪 Zoomarketlər</span><span>🩺 Vetlər</span></div>`;
   setTimeout(initMap,50);
 }
-function initMap(){
+// Kiçik, fərqli pin ikonu (ev/market/vet ayrı görünsün).
+function pinIcon(emoji){
+  return L.divIcon({html:`<div style="font-size:19px;line-height:20px;text-align:center;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))">${emoji}</div>`,
+    className:"petpin",iconSize:[22,22],iconAnchor:[11,11],popupAnchor:[0,-10]});
+}
+async function initMap(){
   if(typeof L==="undefined"){el("map").innerHTML="<p style='padding:20px' class='muted'>Xəritə üçün internet lazımdır.</p>";return;}
   const bounds=[[40.30,49.55],[40.66,50.02]]; // Bakı-Sumqayıt sərhədi
   const map=L.map("map",{maxBounds:bounds,maxBoundsViscosity:1,minZoom:10,maxZoom:15}).setView([40.47,49.80],11);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap"}).addTo(map);
-  // Müştərinin evi (nümunə)
-  L.marker([40.40,49.85]).addTo(map).bindPopup("📍 Sənin evin");
-  // Marketlər
+  // Müştərinin evi
+  L.marker([40.40,49.85],{icon:pinIcon("🏠")}).addTo(map).bindPopup("🏠 Sənin evin");
+  // Marketlər (ayrı pin)
   S.markets.forEach(m=>{ if(m.latitude&&m.longitude)
-    L.marker([m.latitude,m.longitude]).addTo(map).bindPopup("🏪 "+esc(m.name)+"<br>"+esc(m.address||"")); });
+    L.marker([m.latitude,m.longitude],{icon:pinIcon("🏪")}).addTo(map).bindPopup("🏪 "+esc(m.name)+"<br>"+esc(m.address||"")); });
+  // Vetlər (ayrı pin) — ayrıca yüklənir
+  try{
+    const vr=await api("/vets/");
+    const vets=(vr.ok&&(vr.data.results||vr.data))||[];
+    vets.forEach(v=>{ if(v.latitude&&v.longitude)
+      L.marker([v.latitude,v.longitude],{icon:pinIcon("🩺")}).addTo(map).bindPopup("🩺 "+esc(v.name)+(v.clinic?"<br>"+esc(v.clinic):"")); });
+  }catch(e){}
 }
 
 // ================= Ayarlar =================
@@ -839,8 +858,6 @@ function renderSettings(r){
     <div class="set-row" style="border:1.5px solid var(--brand)"><div class="faq-q" onclick="go('vet')"><span>🩺 Evə Vet çağır</span><span>›</span></div></div>
     <h2>Heyvanlarım</h2>
     <div class="set-row"><div class="faq-q" onclick="go('mypets')"><span>🐾 My Pets${S.pets&&S.pets.length?` (${S.pets.length})`:""}</span><span>›</span></div></div>
-    <h2>Satıcı</h2>
-    <div class="set-row" style="border:1.5px solid var(--brand)"><div class="faq-q" onclick="go('seller')"><span>🏪 Mağazam / Məhsul sat</span><span>›</span></div></div>
     <h2>${t("language")}</h2>
     <div class="set-row"><div class="lang">
       <button class="${L2==='az'?'active':''}" onclick="setLang('az')">Azərbaycanca</button>
@@ -853,9 +870,13 @@ function renderSettings(r){
     <h2>${t("cs")}</h2>
     ${FAQ.map((f,i)=>`<div class="set-row"><div class="faq-q" onclick="toggleFaq(${i})">
       <span>${f[0]}</span><span id="fi${i}">+</span></div><div class="faq-a" id="fa${i}">${f[1]}</div></div>`).join("")}
+    <h2>🤝 Partnyor / Biznes</h2>
+    <p class="muted" style="margin:0 14px 6px;font-size:12px">Zoomarket sahibisənsə — burdan məhsul sat.</p>
+    <div class="set-row"><div class="faq-q" onclick="goSeller()"><span>🏪 Satıcı paneli${S.shop?" ✓":""}</span><span>›</span></div></div>
     <div style="height:14px"></div>
     <button class="btn ghost" style="margin:0 12px;width:calc(100% - 24px)" onclick="doLogout()">${t("signout")}</button>
     <h2>Əlaqə & Dəstək</h2>
+    <div class="set-row"><div class="faq-q" onclick="go('about')"><span>ℹ️ Haqqımızda</span><span>›</span></div></div>
     <div class="set-row"><div style="padding:12px">${contactHtml()}</div></div>
     <div class="set-row"><div class="faq-q" onclick="window.open('/sertler.html','_blank')"><span>📄 İstifadə Şərtləri</span><span>›</span></div></div>
     <div class="set-row"><div class="faq-q" onclick="window.open('/mexfilik.html','_blank')"><span>🔒 Məxfilik Siyasəti</span><span>›</span></div></div>
@@ -1065,7 +1086,7 @@ async function renderMyProducts(r){
     const sp=species(p.name,p.pet_type);
     return `<div class="card" style="margin:10px 0">
       <div class="row"><b>${sp.e} ${esc(p.name)}</b><span class="tag">${p.is_active?"Aktiv":"Gizli"}</span></div>
-      ${pimgOk(p)?`<img src="${p.image_data}" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:10px;margin-top:8px">`:""}
+      ${pimgOk(p)?`<img src="${p.image_data}" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:10px;margin-top:8px" onerror="this.style.display='none'">`:""}
       <button class="alink" onclick="changeImg(${p.id})">📷 ${pimgOk(p)?"Şəkli dəyiş":"Şəkil əlavə et"}</button>
       ${p.is_sponsored?`<span class="tag" style="background:#fff3e0;color:var(--brand-d)">✨ Sponsorlu</span>`
         :`<button class="alink" onclick="sponsorReq(${p.id})">🌟 Sponsorlu et — 10 ₼/ay (önə çıxsın)</button>`}
@@ -1395,8 +1416,48 @@ render=async function(){
   if(S.view==="myproducts"){renderNav();return renderMyProducts(el("root"));}
   if(S.view==="sellerorders"){renderNav();return renderSellerOrders(el("root"));}
   if(S.view==="paydone"){renderNav();return renderPayDone(el("root"));}
+  if(S.view==="about"){renderNav();return renderAbout(el("root"));}
   return _origRender();
 };
+// ================= Haqqımızda (About us) =================
+function renderAbout(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>Haqqımızda</span><span></span></div></div>
+  <div class="wrap">
+    <div style="text-align:center;margin:14px 0 8px">
+      <img src="/logo-mark-t.png?v=3" width="80" height="80" alt="Petekh">
+      <h2 style="margin:8px 0 2px">Petekh</h2>
+      <p class="muted" style="margin:0">Ev heyvanların üçün hər şey — qapına qədər.</p>
+    </div>
+    <div class="card">
+      <h2 style="margin:0 0 6px">🐾 Missiyamız</h2>
+      <p style="margin:0">Petekh Bakı–Sumqayıtda ev heyvanı sahiblərini yerli zoomarketlər və baytarlarla
+      bir yerdə toplayan platformadır. Məqsədimiz: heyvanının yeminə, əşyasına, sağlamlığına lazım olan
+      hər şeyi <b>bir toxunuşla, evinə</b> çatdırmaq.</p>
+    </div>
+    <div class="card">
+      <h2 style="margin:0 0 6px">🍯 Niyə "Petekh"?</h2>
+      <p style="margin:0">"Pətək" — arıların birlikdə qurduğu ev. Biz də zoomarketləri, baytarları və
+      heyvan sahiblərini bir pətəkdə birləşdiririk. Loqomuzdakı pətək və pəncə məhz bunu ifadə edir.</p>
+    </div>
+    <div class="card">
+      <h2 style="margin:0 0 6px">🤝 Nə təklif edirik</h2>
+      <p style="margin:0;white-space:pre-line">🛒 Zoomarket məhsulları — bir yerdə
+🚚 Bakı–Sumqayıt üzrə çatdırılma
+🩺 Evə baytar çağırışı
+🐾 PetAI — heyvanın üçün ağıllı köməkçi</p>
+    </div>
+    <div class="card">
+      <h2 style="margin:0 0 6px">📞 Əlaqə</h2>
+      ${contactHtml()}
+    </div>
+    <p class="muted" style="text-align:center;margin:14px 0">Petekh · Bakı–Sumqayıt 🐾</p>
+  </div>`;
+}
+// Satıcı panelinə keçid — adi istifadəçi təsadüfən girib qarışdırmasın deyə təsdiq soruşulur.
+function goSeller(){
+  if(S.shop){go('seller');return;}
+  if(confirm("Bu bölmə ZOOMARKET SAHİBLƏRİ üçündür — burada məhsul satırsan.\n\nSatıcı hesabı açmaq istəyirsən?")) go('seller');
+}
 async function init(){ if(T.get())await boot(); render(); }
 init();
 
