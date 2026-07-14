@@ -43,7 +43,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260722"></script>
+<script src="config.js?v=20260723"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -161,6 +161,46 @@
   .u-INFO{background:#eef1f4;color:#4a5568;}
   .pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;}
   .tag{font-size:11px;background:#f3ede3;color:var(--muted);padding:2px 8px;border-radius:8px;}
+
+  /* ============ TABLET+ : məhsul grid genişlənir ============ */
+  @media (min-width:600px){
+    .grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));}
+  }
+
+  /* ============ MASAÜSTÜ (desktop) dizaynı ============ */
+  @media (min-width:900px){
+    .app{max-width:1120px;}
+    body{padding-bottom:96px;}
+    .top{padding:14px 24px;}
+    .top .brand{font-size:22px;}
+    .search{max-width:640px;margin-top:12px;}
+    /* Geniş kataloq — ekranın eninə görə 4–5 sütun */
+    .grid{padding:10px 24px;gap:16px;}
+    .pimg{height:180px;}
+    .pname{font-size:14px;}
+    .pprice{font-size:16px;}
+    .cats{max-width:1120px;justify-content:center;padding:16px 24px 4px;}
+    /* Mətn/forma səhifələri oxunaqlı enə mərkəzlənir (1120px-ə dağılmasın) */
+    .wrap{max-width:760px;margin:0 auto;}
+    .card,.citem,.set-row{max-width:720px;margin-left:auto;margin-right:auto;}
+    .empty{max-width:640px;margin:0 auto;}
+    .detail{max-width:880px;margin:0 auto;}
+    .detail .big{height:380px;font-size:140px;}
+    #chat{max-width:700px;margin:0 auto;}
+    #map{height:74vh;}
+    /* Aşağı naviqasiya → mərkəzdə üzən "dock" (masaüstündə tam en yaraşmır) */
+    .nav{max-width:500px;left:50%;right:auto;transform:translateX(-50%);bottom:18px;
+      border:1px solid var(--line);border-radius:20px;box-shadow:0 12px 36px rgba(46,50,64,.18);}
+    .nav button:first-child{border-radius:20px 0 0 20px;}
+    .nav button:last-child{border-radius:0 20px 20px 0;}
+    /* Masaüstü hover effektləri (əsl app hissi) */
+    .pcard{transition:transform .15s ease,box-shadow .15s ease;}
+    .pcard:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(46,50,64,.13);}
+    .set-row,.citem{transition:box-shadow .15s ease;}
+    .set-row:hover,.citem:hover{box-shadow:0 5px 16px rgba(46,50,64,.09);}
+    button.btn{transition:filter .15s ease;} button.btn:hover{filter:brightness(1.06);}
+    .cat{transition:transform .12s ease;} .cat:hover{transform:translateY(-2px);}
+  }
 </style>
 </head>
 <body>
