@@ -34,7 +34,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260719"></script>
+<script src="config.js?v=20260720"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -693,6 +693,21 @@ function calcDelivery(sub,addr){
 const ADDR={get:()=>localStorage.getItem("delivery_addr")||"",set:v=>localStorage.setItem("delivery_addr",v)};
 // Tetbiq olunmus endirim kodu (backend /promo/validate/ ile yoxlanir).
 const PROMO={code:"",discount:0};
+let USEBAL=false;  // Bal ilə ödəniş seçilib (promo ilə birlikdə işləmir)
+// Səbətdəki komissiya (qəpik) — endirim qıfılı önizləməsi üçün.
+function cartCommQepik(){return Object.values(S.cart).reduce((s,c)=>s+Math.round(c.p.price_qepik*c.qty*(c.p.commission_percent||0)/100),0);}
+// Bal ilə mümkün endirim (tam AZN, komissiya + səbətlə məhdud).
+function balPreviewQepik(sub){
+  const u=S.user||{};const rate=50;
+  const balVal=Math.floor((u.bal||0)/rate)*100;
+  return Math.floor(Math.min(balVal,sub,cartCommQepik())/100)*100;
+}
+function toggleBal(sub){
+  USEBAL=!USEBAL;
+  if(USEBAL){PROMO.code="";PROMO.discount=0;const pc=el("promocode");if(pc)pc.value="";const pm=el("promomsg");if(pm)pm.innerHTML="";}
+  updatePaySummary(sub);
+  const b=el("baltoggle");if(b)b.className=USEBAL?"btn":"btn ghost";
+}
 function showPay(sub){
   // REAL SATIS REJIMI: hazirda yalniz QAPIDA ODENIS aktivdir.
   // Kart odenisi bank (Payriff/Epoint) inteqrasiyasi qosulanda acilacaq —
@@ -716,6 +731,10 @@ function showPay(sub){
         <button class="btn ghost" style="width:auto;padding:0 16px;margin:0;white-space:nowrap" onclick="applyPromo(${sub})">Tətbiq et</button>
       </div>
       <div id="promomsg"></div>
+      ${(S.user&&(S.user.bal||0)>=50&&balPreviewQepik(sub)>0)?`
+      <button id="baltoggle" class="${USEBAL?'btn':'btn ghost'}" style="margin-top:8px;width:100%" onclick="toggleBal(${sub})">
+        🍯 Balımı işlət — ${azn(balPreviewQepik(sub))} endirim ${USEBAL?'✓':''}</button>
+      <div class="muted" style="font-size:11px;text-align:center;margin-top:3px">Balansın: ${S.user.bal} Bal (${esc(S.user.bal_azn||'')})</div>`:""}
       <div class="row" style="margin-top:8px"><span>${t("total")}</span><b>${azn(sub)}</b></div>
       <div id="paysummary">${paySummaryHtml(sub,ADDR.get())}</div>
       <button class="btn" style="margin-top:10px" onclick="checkout()">Sifarişi təsdiqlə 💵</button>
@@ -724,9 +743,10 @@ function showPay(sub){
 }
 function paySummaryHtml(sub,addr){
   const d=calcDelivery(sub,addr);
-  const disc=Math.min(PROMO.discount||0,sub);
+  const disc=USEBAL?balPreviewQepik(sub):Math.min(PROMO.discount||0,sub);
+  const discLabel=USEBAL?"Bal endirimi 🍯":`Endirim (${esc(PROMO.code)})`;
   return `
-    ${disc?`<div class="row" style="margin-top:4px;color:var(--ok)"><span>Endirim (${esc(PROMO.code)})</span><span>−${azn(disc)}</span></div>`:""}
+    ${disc?`<div class="row" style="margin-top:4px;color:var(--ok)"><span>${discLabel}</span><span>−${azn(disc)}</span></div>`:""}
     <div class="row muted" style="margin-top:4px"><span>${t("delivery")}${d.cross?" (zonalararası)":""}</span>
       ${d.fee?`<span>${azn(d.fee)}</span>`:`<span style="color:var(--ok)">Pulsuz ✓</span>`}</div>
     ${d.fee?`<div class="muted" style="font-size:11px;text-align:right">${azn(d.free)}-dən yuxarı çatdırılma pulsuzdur</div>`:""}
@@ -743,7 +763,7 @@ async function applyPromo(sub){
   const comm=Object.values(S.cart).reduce((s,c)=>s+Math.round(c.p.price_qepik*c.qty*(c.p.commission_percent||0)/100),0);
   const r=await api("/promo/validate/",{method:"POST",body:JSON.stringify({code,subtotal_qepik:sub,commission_qepik:comm})});
   if(r.ok&&r.data&&r.data.valid){
-    PROMO.code=code;PROMO.discount=r.data.discount_qepik||0;
+    PROMO.code=code;PROMO.discount=r.data.discount_qepik||0;USEBAL=false;  // promo seçilsə Bal ləğv
     if(msg)msg.innerHTML=`<p style="color:var(--ok);font-size:12px;margin:4px 0">✓ Endirim tətbiq olundu (−${azn(PROMO.discount)})</p>`;
   }else{
     PROMO.code="";PROMO.discount=0;
@@ -760,16 +780,20 @@ async function checkout(){
   const byMarket={};
   Object.values(S.cart).forEach(c=>{(byMarket[c.p.market]=byMarket[c.p.market]||[]).push(c);});
   const created=[];
-  let promoLeft=PROMO.code; // Kod yalnız ilk sifarişə (bir dəfə) tətbiq olunur
+  let promoLeft=PROMO.code; // Kod/Bal yalnız ilk sifarişə (bir dəfə) tətbiq olunur
+  let balLeft=USEBAL;
   for(const [mid,items] of Object.entries(byMarket)){
     const payload={market:+mid,delivery_address:addr,payment_method:"COD",
       items:items.map(c=>({product:c.p.id,quantity:c.qty}))};
     if(promoLeft){payload.promo_code=promoLeft;promoLeft="";}
+    else if(balLeft){payload.use_bal=true;balLeft=false;}
     const r=await api("/orders/",{method:"POST",body:JSON.stringify(payload)});
     if(!r.ok){el("cmsg").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;return;}
     created.push(r.data.id);
   }
-  PROMO.code="";PROMO.discount=0;
+  PROMO.code="";PROMO.discount=0;USEBAL=false;
+  // Bal balansı dəyişdi — profili yenilə (sonrakı ekranlarda düzgün görünsün).
+  try{const me=await api("/auth/me/");if(me.ok)S.user=me.data;}catch(e){}
   S.cart={};S.pay={created};await refreshUnread();S.view="paydone";renderNav();renderPayDone(el("root"));
 }
 function renderPayDone(r){
@@ -777,6 +801,7 @@ function renderPayDone(r){
   <div class="empty"><div class="big">✅</div>
     <h2>Sifarişiniz qəbul olundu!</h2>
     <p class="muted">Ödənişi <b>çatdırılanda</b> edəcəksən — nağd və ya kartla (kuryerdə). 💵</p>
+    ${S.user&&S.user.bal?`<p style="color:var(--brand-d);font-weight:600">🍯 Balansın: ${S.user.bal} Bal — <span class="alink" onclick="go('bal')" style="cursor:pointer">bax</span></p>`:""}
     <p class="muted">Sifariş nömrələri: ${S.pay.created.map(i=>"#"+i).join(", ")}</p>
     <button class="btn" style="max-width:220px;margin:14px auto 0" onclick="go('home')">${t("home")}</button>
     <button class="btn ghost" style="max-width:220px;margin:8px auto 0" onclick="go('orders')">${t("myorders")}</button>
@@ -856,6 +881,9 @@ function renderSettings(r){
     </div>
     <h2>Xidmətlər</h2>
     <div class="set-row" style="border:1.5px solid var(--brand)"><div class="faq-q" onclick="go('vet')"><span>🩺 Evə Vet çağır</span><span>›</span></div></div>
+    <h2>🍯 Bal (loyallıq)</h2>
+    <div class="set-row" style="border:1.5px solid var(--brand)"><div class="faq-q" onclick="go('bal')">
+      <span>🍯 Balım: <b>${(S.user&&S.user.bal)||0} Bal</b>${S.user&&S.user.bal_level?` · ${esc(S.user.bal_level.emoji||"")} ${esc(S.user.bal_level.name||"")}`:""}</span><span>›</span></div></div>
     <h2>Heyvanlarım</h2>
     <div class="set-row"><div class="faq-q" onclick="go('mypets')"><span>🐾 My Pets${S.pets&&S.pets.length?` (${S.pets.length})`:""}</span><span>›</span></div></div>
     <h2>${t("language")}</h2>
@@ -1417,8 +1445,37 @@ render=async function(){
   if(S.view==="sellerorders"){renderNav();return renderSellerOrders(el("root"));}
   if(S.view==="paydone"){renderNav();return renderPayDone(el("root"));}
   if(S.view==="about"){renderNav();return renderAbout(el("root"));}
+  if(S.view==="bal"){renderNav();return renderBal(el("root"));}
   return _origRender();
 };
+// ================= Bal (loyallıq) =================
+async function renderBal(r){
+  // Ən təzə balansı gətir.
+  try{const me=await api("/auth/me/");if(me.ok)S.user=me.data;}catch(e){}
+  const u=S.user||{};const lv=u.bal_level||{name:"Yeni pətək",emoji:"🐝",progress:0};
+  const prog=lv.progress||0;
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>🍯 Bal</span><span></span></div></div>
+  <div class="wrap">
+    <div class="card" style="text-align:center;background:linear-gradient(135deg,#FFF8EC,#FDEBC8);border-color:var(--brand)">
+      <div style="font-size:40px">${lv.emoji||"🐝"}</div>
+      <div class="muted" style="font-size:12px">Səviyyə</div>
+      <h2 style="margin:2px 0 8px">${esc(lv.name||"")}</h2>
+      <div style="font-size:34px;font-weight:800;color:var(--brand-d)">${u.bal||0} Bal</div>
+      <div class="muted" style="font-size:13px">= ${esc(u.bal_azn||"0.00 AZN")} endirim dəyəri</div>
+      <div style="background:#f0e6d0;border-radius:20px;height:12px;margin:14px 0 6px;overflow:hidden">
+        <div style="width:${prog}%;height:100%;background:linear-gradient(90deg,#F7B21B,#EC8A0E)"></div></div>
+      ${lv.next_name?`<div class="muted" style="font-size:12px">Növbəti səviyyə: <b>${esc(lv.next_name)}</b> — daha ${lv.to_next} Bal</div>`:`<div class="muted" style="font-size:12px">Ən yüksək səviyyədəsən! 👑</div>`}
+    </div>
+    <div class="card">
+      <h2 style="margin:0 0 6px">🍯 Bal necə işləyir?</h2>
+      <p style="margin:0;white-space:pre-line">• Hər <b>1 ₼</b> alış-verişə <b>1 Bal</b> qazan.
+• Bal yığıldıqca <b>pətəyin dolur</b>, səviyyən qalxır.
+• Balını <b>səbətdə endirimə</b> çevir (50 Bal = 1 ₼).
+• Nə qədər çox alsan, o qədər çox qazan! 🐝</p>
+    </div>
+    <button class="btn" onclick="go('home')">Alış-verişə başla 🛒</button>
+  </div>`;
+}
 // ================= Haqqımızda (About us) =================
 function renderAbout(r){
   r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>Haqqımızda</span><span></span></div></div>
