@@ -34,7 +34,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260717"></script>
+<script src="config.js?v=20260718"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -733,7 +733,9 @@ async function applyPromo(sub){
   const msg=el("promomsg");
   if(!code){PROMO.code="";PROMO.discount=0;if(msg)msg.innerHTML="";updatePaySummary(sub);return;}
   if(msg)msg.innerHTML=`<p class="muted" style="font-size:12px;margin:4px 0">Yoxlanılır...</p>`;
-  const r=await api("/promo/validate/",{method:"POST",body:JSON.stringify({code,subtotal_qepik:sub})});
+  // Qıfıl önizləməsi: endirim səbətdəki komissiyadan böyük göstərilməsin.
+  const comm=Object.values(S.cart).reduce((s,c)=>s+Math.round(c.p.price_qepik*c.qty*(c.p.commission_percent||0)/100),0);
+  const r=await api("/promo/validate/",{method:"POST",body:JSON.stringify({code,subtotal_qepik:sub,commission_qepik:comm})});
   if(r.ok&&r.data&&r.data.valid){
     PROMO.code=code;PROMO.discount=r.data.discount_qepik||0;
     if(msg)msg.innerHTML=`<p style="color:var(--ok);font-size:12px;margin:4px 0">✓ Endirim tətbiq olundu (−${azn(PROMO.discount)})</p>`;
