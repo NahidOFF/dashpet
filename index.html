@@ -43,7 +43,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260723"></script>
+<script src="config.js?v=20260724"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -643,17 +643,8 @@ function renderProduct(r){
 }
 function addCart(id){
   const p=findP(id); if(!p)return;
-  // TƏK-MAĞAZA QAYDASI: bir səbətdə yalnız bir mağazanın məhsulları ola bilər.
-  // Səbəb: 1 sifariş = 1 götürmə nöqtəsi → kuryer real və ucuz işləsin (Wolt Drive
-  // kimi: bir dəfəyə bir mağazadan). Fərqli mağaza seçilsə, səbəti sıfırlamağı təklif edirik.
-  const cur=Object.values(S.cart)[0];
-  if(cur && cur.p.market!==p.market){
-    const curShop=marketName(cur.p.market)||"başqa mağaza";
-    const newShop=marketName(p.market)||"bu mağaza";
-    const ok=confirm(`Səbətində "${curShop}" məhsulları var. Petekh-də hər sifariş tək mağazadandır.\n\nSəbəti təmizləyib "${newShop}" ilə başlayaq?`);
-    if(!ok)return;
-    S.cart={};
-  }
+  // ÇOX-MAĞAZA: istənilən mağazadan səbətə atmaq olar. Eyni zonadakı
+  // mağazalar üçün BİR kuryer gedişi = BİR çatdırılma haqqı (checkout-da).
   const c=S.cart[id]||{qty:0,p};c.qty++;S.cart[id]=c;
   renderNav(); toast(t("add")+" ✓");
 }
@@ -701,22 +692,26 @@ function renderCart(r){
   r.innerHTML=`
   <div class="top"><div class="brand"><span>${t("card")}</span><span class="loc">${cartCount()} məhsul</span></div></div>
   <div style="padding-top:6px">
-    <div class="muted" style="display:flex;align-items:center;gap:6px;margin:0 14px 4px;font-size:13px">
-      🏪 <b style="color:var(--ink)">${esc(marketName(items[0].p.market))}</b> · tək mağazadan</div>
-    ${items.map(c=>{const sp=species(c.p.name,c.p.pet_type);return `
-      <div class="citem">
-        <div class="ci" style="background:${sp.bg}">${sp.e}</div>
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:14px">${esc(c.p.name)}</div>
-          <div class="muted">${esc(marketName(c.p.market))}</div>
-          <div class="row" style="margin-top:6px">
-            <span class="pprice">${azn(c.p.price_qepik*c.qty)}</span>
-            <span class="qty">
-              <button onclick="chQty(${c.p.id},-1)">−</button><b>${c.qty}</b><button onclick="chQty(${c.p.id},1)">+</button>
-            </span>
+    ${(function(){
+      const stores={};items.forEach(c=>{(stores[c.p.market]=stores[c.p.market]||[]).push(c);});
+      const ids=Object.keys(stores);
+      const note=ids.length>1?`<div class="muted" style="margin:0 14px 6px;font-size:12px;background:#eefaf0;border:1px solid var(--ok);border-radius:10px;padding:8px 10px">🏪 ${ids.length} mağaza · eyni zonadadırsa <b style="color:var(--ok)">tək çatdırılma haqqı</b> ödəyirsən 🚚</div>`:"";
+      return note+ids.map(mid=>`
+        <div style="margin:6px 14px 2px;font-weight:700;font-size:13px;color:var(--brand-d)">🏪 ${esc(marketName(+mid))}</div>
+        ${stores[mid].map(c=>{const sp=species(c.p.name,c.p.pet_type);return `
+        <div class="citem">
+          <div class="ci" style="background:${sp.bg}">${sp.e}</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">${esc(c.p.name)}</div>
+            <div class="row" style="margin-top:6px">
+              <span class="pprice">${azn(c.p.price_qepik*c.qty)}</span>
+              <span class="qty">
+                <button onclick="chQty(${c.p.id},-1)">−</button><b>${c.qty}</b><button onclick="chQty(${c.p.id},1)">+</button>
+              </span>
+            </div>
           </div>
-        </div>
-      </div>`;}).join("")}
+        </div>`;}).join("")}`).join("");
+    })()}
     <div class="card">
       <div class="row"><span>${t("total")}</span><b style="font-size:20px;color:var(--price)">${azn(sub)}</b></div>
       <div id="paybox">${sub<MIN_ORDER_QEPIK
@@ -743,14 +738,26 @@ function detectZone(txt){
   if(["xirdalan","abseron","absheron","masazir","saray","hovsan"].some(k=>t.includes(k)))return "ABSHERON";
   return "BAKU";
 }
-// Sebetdeki marketlerin zonasi (unvana gore) catdirilma haqqini hesabla.
+function marketZone(mid){
+  const m=S.markets.find(x=>x.id===mid);
+  return detectZone(marketName(mid)+" "+((m&&m.address)||""));
+}
+// BİRLƏŞMİŞ çatdırılma: səbəti market zonasına görə qruplaşdır — hər zona qrupu
+// BİR kuryer gedişi = BİR haqq (mağaza sayına görə yox). Beləcə çox-mağazalı
+// səbətdə müştəri minimum çatdırılma ödəyir.
 function calcDelivery(sub,addr){
   const custZone=detectZone(addr);
-  // Sebetdeki hansisa market musteriden ayri zonadadirsa cross tarif.
-  const cross=Object.values(S.cart).some(c=>detectZone(marketName(c.p.market)+" "+(S.markets.find(m=>m.id===c.p.market)?.address||""))!==custZone);
-  const fee=cross?DELIVERY_FEE_CROSS_QEPIK:DELIVERY_FEE_QEPIK;
-  const free=cross?FREE_DELIVERY_CROSS_FROM_QEPIK:FREE_DELIVERY_FROM_QEPIK;
-  return {fee:sub>=free?0:fee, free, cross};
+  const groups={};
+  Object.values(S.cart).forEach(c=>{const z=marketZone(c.p.market);groups[z]=(groups[z]||0)+c.p.price_qepik*c.qty;});
+  let fee=0,cross=false;
+  Object.keys(groups).forEach(z=>{
+    const same=z===custZone; if(!same)cross=true;
+    const f=same?DELIVERY_FEE_QEPIK:DELIVERY_FEE_CROSS_QEPIK;
+    const free=same?FREE_DELIVERY_FROM_QEPIK:FREE_DELIVERY_CROSS_FROM_QEPIK;
+    fee+=groups[z]>=free?0:f;
+  });
+  const storeCount=new Set(Object.values(S.cart).map(c=>c.p.market)).size;
+  return {fee, cross, free:FREE_DELIVERY_FROM_QEPIK, zones:Object.keys(groups).length, stores:storeCount};
 }
 // Sonuncu unvan yadda qalir (abunelik ve novbeti sifarisler ucun).
 const ADDR={get:()=>localStorage.getItem("delivery_addr")||"",set:v=>localStorage.setItem("delivery_addr",v)};
@@ -810,9 +817,9 @@ function paySummaryHtml(sub,addr){
   const discLabel=USEBAL?"Bal endirimi 🍯":`Endirim (${esc(PROMO.code)})`;
   return `
     ${disc?`<div class="row" style="margin-top:4px;color:var(--ok)"><span>${discLabel}</span><span>−${azn(disc)}</span></div>`:""}
-    <div class="row muted" style="margin-top:4px"><span>${t("delivery")}${d.cross?" (zonalararası)":""}</span>
+    <div class="row muted" style="margin-top:4px"><span>${t("delivery")}${d.cross?" (zonalararası)":""}${d.stores>1?" · birləşmiş":""}</span>
       ${d.fee?`<span>${azn(d.fee)}</span>`:`<span style="color:var(--ok)">Pulsuz ✓</span>`}</div>
-    ${d.fee?`<div class="muted" style="font-size:11px;text-align:right">${azn(d.free)}-dən yuxarı çatdırılma pulsuzdur</div>`:""}
+    ${d.stores>1?`<div class="muted" style="font-size:11px;text-align:right;color:var(--ok)">🚚 ${d.stores} mağaza, bir kuryer — tək haqq</div>`:(d.fee?`<div class="muted" style="font-size:11px;text-align:right">${azn(d.free)}-dən yuxarı çatdırılma pulsuzdur</div>`:"")}
     <div class="row" style="margin-top:6px;font-size:18px"><b>Yekun</b><b style="color:var(--price)">${azn(sub-disc+d.fee)}</b></div>`;
 }
 function updatePaySummary(sub){const b=el("paysummary");if(b)b.innerHTML=paySummaryHtml(sub,el("caddr").value);}
@@ -839,31 +846,27 @@ async function checkout(){
   if(addr.length<8){el("cmsg").innerHTML=`<p class="err">Çatdırılma ünvanını tam yaz (küçə/mənzil daxil).</p>`;return;}
   ADDR.set(addr);
   el("cmsg").innerHTML=`<p class="muted">Göndərilir...</p>`;
-  // Səbəti marketə görə qruplaşdır (backend hər sifarişdə tək market tələb edir)
-  const byMarket={};
-  Object.values(S.cart).forEach(c=>{(byMarket[c.p.market]=byMarket[c.p.market]||[]).push(c);});
-  const created=[];
-  let promoLeft=PROMO.code; // Kod/Bal yalnız ilk sifarişə (bir dəfə) tətbiq olunur
-  let balLeft=USEBAL;
-  for(const [mid,items] of Object.entries(byMarket)){
-    const payload={market:+mid,delivery_address:addr,payment_method:"COD",
-      items:items.map(c=>({product:c.p.id,quantity:c.qty}))};
-    if(promoLeft){payload.promo_code=promoLeft;promoLeft="";}
-    else if(balLeft){payload.use_bal=true;balLeft=false;}
-    const r=await api("/orders/",{method:"POST",body:JSON.stringify(payload)});
-    if(!r.ok){el("cmsg").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;return;}
-    created.push(r.data.id);
-  }
+  // ÇOX-MAĞAZALI CHECKOUT: bütün səbət BİR sorğuda gedir — server marketlərə
+  // bölür, amma eyni zonadakılar üçün BİR çatdırılma haqqı hesablayır.
+  const payload={delivery_address:addr,payment_method:"COD",
+    items:Object.values(S.cart).map(c=>({product:c.p.id,quantity:c.qty}))};
+  if(PROMO.code)payload.promo_code=PROMO.code;
+  else if(USEBAL)payload.use_bal=true;
+  const r=await api("/orders/checkout/",{method:"POST",body:JSON.stringify(payload)});
+  if(!r.ok){el("cmsg").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;return;}
+  const created=r.data.order_ids||[];
   PROMO.code="";PROMO.discount=0;USEBAL=false;
   // Bal balansı dəyişdi — profili yenilə (sonrakı ekranlarda düzgün görünsün).
   try{const me=await api("/auth/me/");if(me.ok)S.user=me.data;}catch(e){}
-  S.cart={};S.pay={created};await refreshUnread();S.view="paydone";renderNav();renderPayDone(el("root"));
+  S.cart={};S.pay={created,stores:r.data.stores,delivery:r.data.delivery_total_azn};
+  await refreshUnread();S.view="paydone";renderNav();renderPayDone(el("root"));
 }
 function renderPayDone(r){
   r.innerHTML=`<div class="top"><div class="brand"><span>Təsdiqləndi</span></div></div>
   <div class="empty"><div class="big">✅</div>
     <h2>Sifarişiniz qəbul olundu!</h2>
     <p class="muted">Ödənişi <b>çatdırılanda</b> edəcəksən — nağd və ya kartla (kuryerdə). 💵</p>
+    ${S.pay.stores>1?`<p class="muted">🚚 ${S.pay.stores} mağazadan bir kuryer gətirəcək${S.pay.delivery?` — çatdırılma: ${esc(S.pay.delivery)}`:""}.</p>`:""}
     ${S.user&&S.user.bal?`<p style="color:var(--brand-d);font-weight:600">🍯 Balansın: ${S.user.bal} Bal — <span class="alink" onclick="go('bal')" style="cursor:pointer">bax</span></p>`:""}
     <p class="muted">Sifariş nömrələri: ${S.pay.created.map(i=>"#"+i).join(", ")}</p>
     <button class="btn" style="max-width:220px;margin:14px auto 0" onclick="go('home')">${t("home")}</button>
