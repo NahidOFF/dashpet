@@ -30,11 +30,20 @@
 <meta name="twitter:title" content="Petekh — ev heyvanların üçün hər şey">
 <meta name="twitter:description" content="Market · Çatdırılma · Evə vet · PetAI. Bakı–Sumqayıt.">
 <meta name="twitter:image" content="https://petekh.com/og.png?v=3">
+<link rel="canonical" href="https://petekh.com/">
+<meta name="keywords" content="ev heyvanı, zoomarket, it yemi, pişik yemi, çatdırılma, evə baytar, PetAI, Bakı, Sumqayıt, Petekh">
+<!-- Structured data (Google axtarışı üçün) -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"Organization","name":"Petekh","url":"https://petekh.com/","logo":"https://petekh.com/icon-512.png","email":"petekhsupport@gmail.com","areaServed":["Bakı","Sumqayıt"],"description":"Ev heyvanları üçün market, çatdırılma, evə baytar və PetAI köməkçisi."},
+{"@type":"WebSite","name":"Petekh","url":"https://petekh.com/","inLanguage":"az"}
+]}
+</script>
 <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260717"></script>
+<script src="config.js?v=20260725"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -44,7 +53,13 @@
     --brand:#F49B0D; --brand-d:#D97D06; --price:#d6371f; --line:#f0e8d8;
     --star:#f5a623; --ok:#2e8b57; --danger:#c0392b; --warn:#d98a1f;
   }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  /* Açılışda ağ flash olmasın — html dərhal brend fonunda olsun. */
+  html{background-color:#faf7f0;}
+  /* Uzun sözlər/mətnlər daşmasın (ünvan, məhsul adı və s.). */
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;overflow-wrap:break-word;}
+  #splash{min-height:78vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
+  #splash img{animation:pulse 1.3s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.55;transform:scale(.96)}50%{opacity:1;transform:scale(1)}}
   body{margin:0;background-color:var(--bg);color:var(--ink);
     /* Arxa fon (poster uslubu): kunclerden "boylanan" solgun bal petekleri —
        iri, dolu (pale) altibucaqlar, aralarinda ag bosluq; yalniz uc hissesi
@@ -95,7 +110,7 @@
     font-weight:700;padding:2px 7px;border-radius:8px;border:1px solid #ffd9b3;}
   .pinfo{padding:8px 9px 10px;}
   .pname{font-size:13px;font-weight:600;line-height:1.25;height:34px;overflow:hidden;}
-  .pshop{font-size:11px;color:var(--muted);margin-top:2px;}
+  .pshop{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .prate{font-size:11px;color:var(--star);margin-top:3px;}
   .pprice{font-size:15px;font-weight:800;color:var(--price);margin-top:3px;}
   /* Duymeler */
@@ -146,11 +161,65 @@
   .u-INFO{background:#eef1f4;color:#4a5568;}
   .pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;}
   .tag{font-size:11px;background:#f3ede3;color:var(--muted);padding:2px 8px;border-radius:8px;}
+
+  /* ============ TABLET+ : məhsul grid genişlənir ============ */
+  @media (min-width:600px){
+    .grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));}
+  }
+
+  /* ============ MASAÜSTÜ (desktop) dizaynı ============ */
+  @media (min-width:900px){
+    .app{max-width:1120px;}
+    body{padding-bottom:96px;}
+    .top{padding:14px 24px;}
+    .top .brand{font-size:22px;}
+    .search{max-width:640px;margin-top:12px;}
+    /* Geniş kataloq — ekranın eninə görə 4–5 sütun */
+    .grid{padding:10px 24px;gap:16px;}
+    .pimg{height:180px;}
+    .pname{font-size:14px;}
+    .pprice{font-size:16px;}
+    .cats{max-width:1120px;justify-content:center;padding:16px 24px 4px;}
+    /* Mətn/forma səhifələri oxunaqlı enə mərkəzlənir (1120px-ə dağılmasın) */
+    .wrap{max-width:760px;margin:0 auto;}
+    .card,.citem,.set-row{max-width:720px;margin-left:auto;margin-right:auto;}
+    .empty{max-width:640px;margin:0 auto;}
+    .detail{max-width:880px;margin:0 auto;}
+    .detail .big{height:380px;font-size:140px;}
+    #chat{max-width:700px;margin:0 auto;}
+    #map{height:74vh;}
+    /* Aşağı naviqasiya → mərkəzdə üzən "dock" (masaüstündə tam en yaraşmır) */
+    .nav{max-width:500px;left:50%;right:auto;transform:translateX(-50%);bottom:18px;
+      border:1px solid var(--line);border-radius:20px;box-shadow:0 12px 36px rgba(46,50,64,.18);}
+    .nav button:first-child{border-radius:20px 0 0 20px;}
+    .nav button:last-child{border-radius:0 20px 20px 0;}
+    /* Masaüstü hover effektləri (əsl app hissi) */
+    .pcard{transition:transform .15s ease,box-shadow .15s ease;}
+    .pcard:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(46,50,64,.13);}
+    .set-row,.citem{transition:box-shadow .15s ease;}
+    .set-row:hover,.citem:hover{box-shadow:0 5px 16px rgba(46,50,64,.09);}
+    button.btn{transition:filter .15s ease;} button.btn:hover{filter:brightness(1.06);}
+    .cat{transition:transform .12s ease;} .cat:hover{transform:translateY(-2px);}
+  }
 </style>
 </head>
 <body>
-<div class="app" id="root"></div>
+<div class="app" id="root"><div id="splash">
+  <img src="/logo-mark-t.png?v=3" width="76" height="76" alt="Petekh loqosu">
+  <h1 style="font-size:20px;margin:6px 0 0;color:#2E3240;text-align:center">Petekh — ev heyvanların üçün hər şey</h1>
+  <p style="color:#8a857c;font-size:13px;margin:3px 12px 0;max-width:320px;text-align:center">Bakı–Sumqayıt üzrə zoomarket məhsulları, çatdırılma, evə baytar və PetAI köməkçisi.</p>
+  <div style="color:#b7b0a2;font-size:12px;margin-top:10px">Yüklənir…</div>
+</div></div>
 <div class="nav" id="nav"></div>
+<noscript>
+  <div style="max-width:520px;margin:0 auto;padding:20px;font-family:sans-serif;color:#2E3240">
+    <h2>Petekh — ev heyvanların üçün hər şey</h2>
+    <p>Petekh Bakı və Sumqayıtda ev heyvanı sahiblərini yerli zoomarketlər və baytarlarla birləşdirir:
+    it və pişik yemi, əşyalar, qapıya çatdırılma və evə baytar xidməti.</p>
+    <p>Tətbiqi işlətmək üçün JavaScript lazımdır.
+    <a href="/sertler.html">İstifadə Şərtləri</a> · <a href="/mexfilik.html">Məxfilik Siyasəti</a></p>
+  </div>
+</noscript>
 
 <script>
 // ================= Kicik kömekci =================
@@ -438,7 +507,7 @@ function pimgOk(p){return p.image_data&&/^data:image\/(jpeg|png|webp);base64,[A-
 function pcard(p){
   const sp=species(p.name,p.pet_type);
   return `<div class="pcard" onclick="openProduct(${p.id})">
-    <div class="pimg" style="background:${sp.bg}">${pimgOk(p)?`<img src="${p.image_data}" alt="">`:sp.e}</div>
+    <div class="pimg" style="background:${sp.bg}">${pimgOk(p)?`<img src="${p.image_data}" alt="" onerror="this.parentNode.innerHTML='${sp.e}'">`:sp.e}</div>
     <div class="pinfo">
       <div class="pname">${esc(p.name)}</div>
       <div class="pshop">${esc(marketName(p.market))}</div>
@@ -544,7 +613,7 @@ function renderProduct(r){
   r.innerHTML=`
   <div class="top"><div class="brand"><button class="back" onclick="go('home')">‹</button><span>${esc(p.name)}</span><span></span></div></div>
   <div class="detail">
-    <div class="big" style="background:${sp.bg};position:relative;overflow:hidden">${pimgOk(p)?`<img src="${p.image_data}" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover">`:sp.e}</div>
+    <div class="big" style="background:${sp.bg};position:relative;overflow:hidden">${pimgOk(p)?`<img src="${p.image_data}" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML='${sp.e}'">`:sp.e}</div>
     <div class="card">
       ${sponsored(p.id)?`<span class="pill" style="background:#fff3e0;color:var(--brand-d)">${t("sponsored")}</span>`:""}
       <h2 style="margin:6px 0">${esc(p.name)}</h2>
@@ -556,8 +625,8 @@ function renderProduct(r){
       <div style="margin-top:10px"><span class="tag">${p.category}</span> <span class="tag">Stok: ${p.stock_qty}</span></div>
       <div style="margin-top:12px"><button class="btn" onclick="addCart(${p.id})">🛒 ${t("add")}</button></div>
       <div style="margin-top:8px">
-        <button class="btn ghost" onclick="subBtn(${p.id})">📦 Aylıq abunə ol — PULSUZ</button>
-        <div class="muted" style="font-size:12px;margin-top:5px;color:var(--ok);font-weight:600">🎁 2-ci aydan hər ay 5% endirim</div>
+        <button class="btn ghost" onclick="subBtn(${p.id})">📦 Abunə ol — avtomatik gəlsin</button>
+        ${(+p.sub_discount_percent||0)>0?`<div class="muted" style="font-size:12px;margin-top:5px;color:var(--ok);font-weight:600">🎁 Abunəçilərə ${+p.sub_discount_percent}% endirim (mağazadan)</div>`:""}
       </div>
       <div id="subpanel"></div>
     </div>
@@ -574,17 +643,8 @@ function renderProduct(r){
 }
 function addCart(id){
   const p=findP(id); if(!p)return;
-  // TƏK-MAĞAZA QAYDASI: bir səbətdə yalnız bir mağazanın məhsulları ola bilər.
-  // Səbəb: 1 sifariş = 1 götürmə nöqtəsi → kuryer real və ucuz işləsin (Wolt Drive
-  // kimi: bir dəfəyə bir mağazadan). Fərqli mağaza seçilsə, səbəti sıfırlamağı təklif edirik.
-  const cur=Object.values(S.cart)[0];
-  if(cur && cur.p.market!==p.market){
-    const curShop=marketName(cur.p.market)||"başqa mağaza";
-    const newShop=marketName(p.market)||"bu mağaza";
-    const ok=confirm(`Səbətində "${curShop}" məhsulları var. Petekh-də hər sifariş tək mağazadandır.\n\nSəbəti təmizləyib "${newShop}" ilə başlayaq?`);
-    if(!ok)return;
-    S.cart={};
-  }
+  // ÇOX-MAĞAZA: istənilən mağazadan səbətə atmaq olar. Eyni zonadakı
+  // mağazalar üçün BİR kuryer gedişi = BİR çatdırılma haqqı (checkout-da).
   const c=S.cart[id]||{qty:0,p};c.qty++;S.cart[id]=c;
   renderNav(); toast(t("add")+" ✓");
 }
@@ -595,15 +655,49 @@ function toast(msg){
   x.textContent=msg;x.style.opacity="1";clearTimeout(window._tt);window._tt=setTimeout(()=>x.style.opacity="0",1800);
 }
 
-// ---- Abunelik (PULSUZ + 2-ci aydan 5% endirim) ----
+// ---- Abunelik: istehlak kalkulyatoru + rayon/gun (marsrut sixligi) ----
+// Yem sərfiyyatı DÜSTURDUR, AI deyil (backend feeding_estimate ilə eyni əmsallar).
+const FEED_COEF={cat:{perkg:12,min:40,max:90,fb:60},dog:{perkg:15,min:80,max:500,fb:250}};
+const SUB_DISTRICTS=[["","Rayon seç (istəyə bağlı)"],["BINEQEDI","Binəqədi"],["XETAI","Xətai"],["XEZER","Xəzər"],["QARADAG","Qaradağ"],["NERIMANOV","Nərimanov"],["NESIMI","Nəsimi"],["NIZAMI","Nizami"],["SABUNCU","Sabunçu"],["SEBAIL","Səbail"],["SURAXANI","Suraxanı"],["YASAMAL","Yasamal"],["SUMQAYIT","Sumqayıt"],["ABSHERON","Abşeron"],["OTHER","Digər"]];
+const SUB_DAYS=[["","Fərq etməz"],["MON","B.e"],["TUE","Ç.a"],["WED","Çərşənbə"],["THU","C.a"],["FRI","Cümə"],["SAT","Şənbə"],["SUN","Bazar"]];
+function feedCalc(p){
+  // Mehsul adindan torba cekisi + pet profilinden heyvan cekisi -> nece gune catir.
+  const bag=(p.name||"").match(/(\d+[\.,]?\d*)\s*(kq|kg)/i);
+  if(!bag)return null;
+  const bagKg=parseFloat(bag[1].replace(",","."));
+  const pet=(S.pets||[]).find(x=>(x.species==="CAT"||x.species==="DOG")&&x.weight_kg);
+  if(!pet)return null;
+  const c=FEED_COEF[pet.species==="CAT"?"cat":"dog"];
+  const w=parseFloat(pet.weight_kg);
+  const daily=w?Math.max(c.min,Math.min(c.max,Math.round(w*c.perkg))):c.fb;
+  const days=Math.round(bagKg*1000/daily);
+  return {pet,bagKg,daily,days,suggest:days>=25?"MONTHLY":"WEEKLY"};
+}
 function subBtn(pid){
   const box=el("subpanel"); if(!box){doProductSub(pid);return;}
+  const p=findP(pid)||{};
+  const disc=+p.sub_discount_percent||0;
+  const fc=feedCalc(p);
   box.innerHTML=`
     <div class="card" style="margin:10px 0;border:1.5px solid var(--brand)">
-      <b>İstədiyin məhsula abunə ol, hər ay sifariş vermədən qapında olsun!</b>
-      <p class="muted" style="margin:8px 0">Abunə olmaq <b>tamamilə pulsuzdur</b> — hər ay avtomatik sifariş olunub qapına gətirilir. İstədiyin vaxt ləğv edə bilərsən.</p>
-      <p style="margin:8px 0;color:var(--ok);font-weight:700">🎁 2-ci aydan hər ay 5% endirim!</p>
-      <button class="btn" onclick="doProductSub(${pid})">Pulsuz abunə ol 📦</button>
+      <b>Abunə ol — sifariş vermədən qapında olsun 📦</b>
+      ${fc?`<div class="card" style="margin:8px 0;background:#fff7e6;border-color:var(--brand);padding:10px 12px;font-size:13px">
+        🧮 <b>${esc(fc.pet.name)}</b> (${fc.pet.weight_kg} kq) → gündə ~${fc.daily} q →
+        ${fc.bagKg} kq torba ~<b>${fc.days} gün</b> çatır →
+        <b>${fc.suggest==="MONTHLY"?"aylıq":"həftəlik"}</b> məsləhətdir.
+        <div class="muted" style="font-size:11px;margin-top:3px">Bu, orta təxmindir — intervalı özün seç, istənilən vaxt dəyiş.</div></div>`:""}
+      ${disc>0?`<p style="margin:8px 0;color:var(--ok);font-weight:700">🎁 Abunəçilərə ${disc}% endirim — mağaza hədiyyəsi!</p>`:""}
+      <label>Tezlik</label>
+      <select class="f" id="subint">
+        <option value="MONTHLY" ${(!fc||fc.suggest==="MONTHLY")?"selected":""}>Aylıq</option>
+        <option value="WEEKLY" ${fc&&fc.suggest==="WEEKLY"?"selected":""}>Həftəlik</option>
+      </select>
+      <label>Rayon</label>
+      <select class="f" id="subdist">${SUB_DISTRICTS.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select>
+      <label>Çatdırılma günü</label>
+      <select class="f" id="subday">${SUB_DAYS.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select>
+      <p class="muted" style="font-size:11px;margin:6px 0">Hər çatdırılmada adi çatdırılma haqqı tutulur. İstədiyin vaxt dayandır/ləğv et — pulsuzdur.</p>
+      <button class="btn" onclick="doProductSub(${pid})">Abunə ol 📦</button>
       <div id="submsg"></div>
     </div>`;
 }
@@ -615,10 +709,12 @@ async function doProductSub(pid){
     if(addr.length<8){toast("Ünvan tam yazılmadı");return;}
     ADDR.set(addr);
   }
-  const body=JSON.stringify({market:p.market,interval:"MONTHLY",
-    delivery_address:addr,items:[{product:pid,quantity:1}]});
-  const r=await api("/subscriptions/",{method:"POST",body});
-  if(r.ok){toast("Abunə olundu! Hər ay qapında 📦");render();}
+  const body={market:p.market,interval:(el("subint")&&el("subint").value)||"MONTHLY",
+    delivery_address:addr,items:[{product:pid,quantity:1}]};
+  const dist=el("subdist")&&el("subdist").value; if(dist)body.district=dist;
+  const day=el("subday")&&el("subday").value; if(day)body.preferred_delivery_day=day;
+  const r=await api("/subscriptions/",{method:"POST",body:JSON.stringify(body)});
+  if(r.ok){toast("Abunə olundu! Avtomatik qapında 📦");render();}
   else{const box=el("subpanel");if(box)box.innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;}
 }
 
@@ -632,22 +728,26 @@ function renderCart(r){
   r.innerHTML=`
   <div class="top"><div class="brand"><span>${t("card")}</span><span class="loc">${cartCount()} məhsul</span></div></div>
   <div style="padding-top:6px">
-    <div class="muted" style="display:flex;align-items:center;gap:6px;margin:0 14px 4px;font-size:13px">
-      🏪 <b style="color:var(--ink)">${esc(marketName(items[0].p.market))}</b> · tək mağazadan</div>
-    ${items.map(c=>{const sp=species(c.p.name,c.p.pet_type);return `
-      <div class="citem">
-        <div class="ci" style="background:${sp.bg}">${sp.e}</div>
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:14px">${esc(c.p.name)}</div>
-          <div class="muted">${esc(marketName(c.p.market))}</div>
-          <div class="row" style="margin-top:6px">
-            <span class="pprice">${azn(c.p.price_qepik*c.qty)}</span>
-            <span class="qty">
-              <button onclick="chQty(${c.p.id},-1)">−</button><b>${c.qty}</b><button onclick="chQty(${c.p.id},1)">+</button>
-            </span>
+    ${(function(){
+      const stores={};items.forEach(c=>{(stores[c.p.market]=stores[c.p.market]||[]).push(c);});
+      const ids=Object.keys(stores);
+      const note=ids.length>1?`<div class="muted" style="margin:0 14px 6px;font-size:12px;background:#eefaf0;border:1px solid var(--ok);border-radius:10px;padding:8px 10px">🏪 ${ids.length} mağaza · eyni zonadadırsa <b style="color:var(--ok)">tək çatdırılma haqqı</b> ödəyirsən 🚚</div>`:"";
+      return note+ids.map(mid=>`
+        <div style="margin:6px 14px 2px;font-weight:700;font-size:13px;color:var(--brand-d)">🏪 ${esc(marketName(+mid))}</div>
+        ${stores[mid].map(c=>{const sp=species(c.p.name,c.p.pet_type);return `
+        <div class="citem">
+          <div class="ci" style="background:${sp.bg}">${sp.e}</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">${esc(c.p.name)}</div>
+            <div class="row" style="margin-top:6px">
+              <span class="pprice">${azn(c.p.price_qepik*c.qty)}</span>
+              <span class="qty">
+                <button onclick="chQty(${c.p.id},-1)">−</button><b>${c.qty}</b><button onclick="chQty(${c.p.id},1)">+</button>
+              </span>
+            </div>
           </div>
-        </div>
-      </div>`;}).join("")}
+        </div>`;}).join("")}`).join("");
+    })()}
     <div class="card">
       <div class="row"><span>${t("total")}</span><b style="font-size:20px;color:var(--price)">${azn(sub)}</b></div>
       <div id="paybox">${sub<MIN_ORDER_QEPIK
@@ -662,11 +762,12 @@ function renderCart(r){
 }
 function chQty(id,d){const c=S.cart[id];if(!c)return;c.qty+=d;if(c.qty<=0)delete S.cart[id];render();}
 // Minimum sifaris meblegi (qepik) — backend ile eynidir. 5 AZN-e endirende 500 yaz.
-const MIN_ORDER_QEPIK=1000;
+const MIN_ORDER_QEPIK=2500; // 25 AZN (müqavilə: kiçik sifariş kuryer xərcini ödəmir)
 // Catdirilma haqqi — backend ile eynidir (kuryer xerci musteriden).
 // Catdirilma tarifleri (backend ile eyni). Eyni zona / zonalar arasi.
-const DELIVERY_FEE_QEPIK=299, FREE_DELIVERY_FROM_QEPIK=3000;
-const DELIVERY_FEE_CROSS_QEPIK=599, FREE_DELIVERY_CROSS_FROM_QEPIK=6000;
+// PULSUZ ÇATDIRILMA YOXDUR (0 = deaktiv) — güzəşt "çox mağaza, tək haqq"dır.
+const DELIVERY_FEE_QEPIK=299, FREE_DELIVERY_FROM_QEPIK=0;
+const DELIVERY_FEE_CROSS_QEPIK=599, FREE_DELIVERY_CROSS_FROM_QEPIK=0;
 // Unvandan zona tap (backend detect_zone ile eyni mentiq).
 function detectZone(txt){
   const t=(txt||"").toLowerCase().replace(/ı/g,"i").replace(/ş/g,"s").replace(/ə/g,"e");
@@ -674,19 +775,46 @@ function detectZone(txt){
   if(["xirdalan","abseron","absheron","masazir","saray","hovsan"].some(k=>t.includes(k)))return "ABSHERON";
   return "BAKU";
 }
-// Sebetdeki marketlerin zonasi (unvana gore) catdirilma haqqini hesabla.
+function marketZone(mid){
+  const m=S.markets.find(x=>x.id===mid);
+  return detectZone(marketName(mid)+" "+((m&&m.address)||""));
+}
+// BİRLƏŞMİŞ çatdırılma: səbəti market zonasına görə qruplaşdır — hər zona qrupu
+// BİR kuryer gedişi = BİR haqq (mağaza sayına görə yox). Beləcə çox-mağazalı
+// səbətdə müştəri minimum çatdırılma ödəyir.
 function calcDelivery(sub,addr){
   const custZone=detectZone(addr);
-  // Sebetdeki hansisa market musteriden ayri zonadadirsa cross tarif.
-  const cross=Object.values(S.cart).some(c=>detectZone(marketName(c.p.market)+" "+(S.markets.find(m=>m.id===c.p.market)?.address||""))!==custZone);
-  const fee=cross?DELIVERY_FEE_CROSS_QEPIK:DELIVERY_FEE_QEPIK;
-  const free=cross?FREE_DELIVERY_CROSS_FROM_QEPIK:FREE_DELIVERY_FROM_QEPIK;
-  return {fee:sub>=free?0:fee, free, cross};
+  const groups={};
+  Object.values(S.cart).forEach(c=>{const z=marketZone(c.p.market);groups[z]=(groups[z]||0)+c.p.price_qepik*c.qty;});
+  let fee=0,cross=false;
+  Object.keys(groups).forEach(z=>{
+    const same=z===custZone; if(!same)cross=true;
+    const f=same?DELIVERY_FEE_QEPIK:DELIVERY_FEE_CROSS_QEPIK;
+    const free=same?FREE_DELIVERY_FROM_QEPIK:FREE_DELIVERY_CROSS_FROM_QEPIK;
+    fee+=(free>0&&groups[z]>=free)?0:f;
+  });
+  const storeCount=new Set(Object.values(S.cart).map(c=>c.p.market)).size;
+  return {fee, cross, free:FREE_DELIVERY_FROM_QEPIK, zones:Object.keys(groups).length, stores:storeCount};
 }
 // Sonuncu unvan yadda qalir (abunelik ve novbeti sifarisler ucun).
 const ADDR={get:()=>localStorage.getItem("delivery_addr")||"",set:v=>localStorage.setItem("delivery_addr",v)};
 // Tetbiq olunmus endirim kodu (backend /promo/validate/ ile yoxlanir).
 const PROMO={code:"",discount:0};
+let USEBAL=false;  // Bal ilə ödəniş seçilib (promo ilə birlikdə işləmir)
+// Səbətdəki komissiya (qəpik) — endirim qıfılı önizləməsi üçün.
+function cartCommQepik(){return Object.values(S.cart).reduce((s,c)=>s+Math.round(c.p.price_qepik*c.qty*(c.p.commission_percent||0)/100),0);}
+// Bal ilə mümkün endirim (tam AZN, komissiya + səbətlə məhdud).
+function balPreviewQepik(sub){
+  const u=S.user||{};const rate=50;
+  const balVal=Math.floor((u.bal||0)/rate)*100;
+  return Math.floor(Math.min(balVal,sub,cartCommQepik())/100)*100;
+}
+function toggleBal(sub){
+  USEBAL=!USEBAL;
+  if(USEBAL){PROMO.code="";PROMO.discount=0;const pc=el("promocode");if(pc)pc.value="";const pm=el("promomsg");if(pm)pm.innerHTML="";}
+  updatePaySummary(sub);
+  const b=el("baltoggle");if(b)b.className=USEBAL?"btn":"btn ghost";
+}
 function showPay(sub){
   // REAL SATIS REJIMI: hazirda yalniz QAPIDA ODENIS aktivdir.
   // Kart odenisi bank (Payriff/Epoint) inteqrasiyasi qosulanda acilacaq —
@@ -710,6 +838,10 @@ function showPay(sub){
         <button class="btn ghost" style="width:auto;padding:0 16px;margin:0;white-space:nowrap" onclick="applyPromo(${sub})">Tətbiq et</button>
       </div>
       <div id="promomsg"></div>
+      ${(S.user&&(S.user.bal||0)>=50&&balPreviewQepik(sub)>0)?`
+      <button id="baltoggle" class="${USEBAL?'btn':'btn ghost'}" style="margin-top:8px;width:100%" onclick="toggleBal(${sub})">
+        🍯 Balımı işlət — ${azn(balPreviewQepik(sub))} endirim ${USEBAL?'✓':''}</button>
+      <div class="muted" style="font-size:11px;text-align:center;margin-top:3px">Balansın: ${S.user.bal} Bal (${esc(S.user.bal_azn||'')})</div>`:""}
       <div class="row" style="margin-top:8px"><span>${t("total")}</span><b>${azn(sub)}</b></div>
       <div id="paysummary">${paySummaryHtml(sub,ADDR.get())}</div>
       <button class="btn" style="margin-top:10px" onclick="checkout()">Sifarişi təsdiqlə 💵</button>
@@ -718,12 +850,13 @@ function showPay(sub){
 }
 function paySummaryHtml(sub,addr){
   const d=calcDelivery(sub,addr);
-  const disc=Math.min(PROMO.discount||0,sub);
+  const disc=USEBAL?balPreviewQepik(sub):Math.min(PROMO.discount||0,sub);
+  const discLabel=USEBAL?"Bal endirimi 🍯":`Endirim (${esc(PROMO.code)})`;
   return `
-    ${disc?`<div class="row" style="margin-top:4px;color:var(--ok)"><span>Endirim (${esc(PROMO.code)})</span><span>−${azn(disc)}</span></div>`:""}
-    <div class="row muted" style="margin-top:4px"><span>${t("delivery")}${d.cross?" (zonalararası)":""}</span>
+    ${disc?`<div class="row" style="margin-top:4px;color:var(--ok)"><span>${discLabel}</span><span>−${azn(disc)}</span></div>`:""}
+    <div class="row muted" style="margin-top:4px"><span>${t("delivery")}${d.cross?" (zonalararası)":""}${d.stores>1?" · birləşmiş":""}</span>
       ${d.fee?`<span>${azn(d.fee)}</span>`:`<span style="color:var(--ok)">Pulsuz ✓</span>`}</div>
-    ${d.fee?`<div class="muted" style="font-size:11px;text-align:right">${azn(d.free)}-dən yuxarı çatdırılma pulsuzdur</div>`:""}
+    ${d.stores>1?`<div class="muted" style="font-size:11px;text-align:right;color:var(--ok)">🚚 ${d.stores} mağaza, bir kuryer — tək haqq</div>`:(d.fee&&d.free>0?`<div class="muted" style="font-size:11px;text-align:right">${azn(d.free)}-dən yuxarı çatdırılma pulsuzdur</div>`:"")}
     <div class="row" style="margin-top:6px;font-size:18px"><b>Yekun</b><b style="color:var(--price)">${azn(sub-disc+d.fee)}</b></div>`;
 }
 function updatePaySummary(sub){const b=el("paysummary");if(b)b.innerHTML=paySummaryHtml(sub,el("caddr").value);}
@@ -733,9 +866,11 @@ async function applyPromo(sub){
   const msg=el("promomsg");
   if(!code){PROMO.code="";PROMO.discount=0;if(msg)msg.innerHTML="";updatePaySummary(sub);return;}
   if(msg)msg.innerHTML=`<p class="muted" style="font-size:12px;margin:4px 0">Yoxlanılır...</p>`;
-  const r=await api("/promo/validate/",{method:"POST",body:JSON.stringify({code,subtotal_qepik:sub})});
+  // Qıfıl önizləməsi: endirim səbətdəki komissiyadan böyük göstərilməsin.
+  const comm=Object.values(S.cart).reduce((s,c)=>s+Math.round(c.p.price_qepik*c.qty*(c.p.commission_percent||0)/100),0);
+  const r=await api("/promo/validate/",{method:"POST",body:JSON.stringify({code,subtotal_qepik:sub,commission_qepik:comm})});
   if(r.ok&&r.data&&r.data.valid){
-    PROMO.code=code;PROMO.discount=r.data.discount_qepik||0;
+    PROMO.code=code;PROMO.discount=r.data.discount_qepik||0;USEBAL=false;  // promo seçilsə Bal ləğv
     if(msg)msg.innerHTML=`<p style="color:var(--ok);font-size:12px;margin:4px 0">✓ Endirim tətbiq olundu (−${azn(PROMO.discount)})</p>`;
   }else{
     PROMO.code="";PROMO.discount=0;
@@ -748,27 +883,28 @@ async function checkout(){
   if(addr.length<8){el("cmsg").innerHTML=`<p class="err">Çatdırılma ünvanını tam yaz (küçə/mənzil daxil).</p>`;return;}
   ADDR.set(addr);
   el("cmsg").innerHTML=`<p class="muted">Göndərilir...</p>`;
-  // Səbəti marketə görə qruplaşdır (backend hər sifarişdə tək market tələb edir)
-  const byMarket={};
-  Object.values(S.cart).forEach(c=>{(byMarket[c.p.market]=byMarket[c.p.market]||[]).push(c);});
-  const created=[];
-  let promoLeft=PROMO.code; // Kod yalnız ilk sifarişə (bir dəfə) tətbiq olunur
-  for(const [mid,items] of Object.entries(byMarket)){
-    const payload={market:+mid,delivery_address:addr,payment_method:"COD",
-      items:items.map(c=>({product:c.p.id,quantity:c.qty}))};
-    if(promoLeft){payload.promo_code=promoLeft;promoLeft="";}
-    const r=await api("/orders/",{method:"POST",body:JSON.stringify(payload)});
-    if(!r.ok){el("cmsg").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;return;}
-    created.push(r.data.id);
-  }
-  PROMO.code="";PROMO.discount=0;
-  S.cart={};S.pay={created};await refreshUnread();S.view="paydone";renderNav();renderPayDone(el("root"));
+  // ÇOX-MAĞAZALI CHECKOUT: bütün səbət BİR sorğuda gedir — server marketlərə
+  // bölür, amma eyni zonadakılar üçün BİR çatdırılma haqqı hesablayır.
+  const payload={delivery_address:addr,payment_method:"COD",
+    items:Object.values(S.cart).map(c=>({product:c.p.id,quantity:c.qty}))};
+  if(PROMO.code)payload.promo_code=PROMO.code;
+  else if(USEBAL)payload.use_bal=true;
+  const r=await api("/orders/checkout/",{method:"POST",body:JSON.stringify(payload)});
+  if(!r.ok){el("cmsg").innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;return;}
+  const created=r.data.order_ids||[];
+  PROMO.code="";PROMO.discount=0;USEBAL=false;
+  // Bal balansı dəyişdi — profili yenilə (sonrakı ekranlarda düzgün görünsün).
+  try{const me=await api("/auth/me/");if(me.ok)S.user=me.data;}catch(e){}
+  S.cart={};S.pay={created,stores:r.data.stores,delivery:r.data.delivery_total_azn};
+  await refreshUnread();S.view="paydone";renderNav();renderPayDone(el("root"));
 }
 function renderPayDone(r){
   r.innerHTML=`<div class="top"><div class="brand"><span>Təsdiqləndi</span></div></div>
   <div class="empty"><div class="big">✅</div>
     <h2>Sifarişiniz qəbul olundu!</h2>
     <p class="muted">Ödənişi <b>çatdırılanda</b> edəcəksən — nağd və ya kartla (kuryerdə). 💵</p>
+    ${S.pay.stores>1?`<p class="muted">🚚 ${S.pay.stores} mağazadan bir kuryer gətirəcək${S.pay.delivery?` — çatdırılma: ${esc(S.pay.delivery)}`:""}.</p>`:""}
+    ${S.user&&S.user.bal?`<p style="color:var(--brand-d);font-weight:600">🍯 Balansın: ${S.user.bal} Bal — <span class="alink" onclick="go('bal')" style="cursor:pointer">bax</span></p>`:""}
     <p class="muted">Sifariş nömrələri: ${S.pay.created.map(i=>"#"+i).join(", ")}</p>
     <button class="btn" style="max-width:220px;margin:14px auto 0" onclick="go('home')">${t("home")}</button>
     <button class="btn ghost" style="max-width:220px;margin:8px auto 0" onclick="go('orders')">${t("myorders")}</button>
@@ -805,19 +941,32 @@ async function oAct(id,a){const r=await api(`/orders/${id}/${a}/`,{method:"POST"
 function renderMaps(r){
   r.innerHTML=`<div class="top"><div class="brand"><span>${t("maps")}</span><span class="loc">Bakı–Sumqayıt</span></div></div>
     <div id="map"></div>
-    <p class="muted" style="padding:10px 14px">📍 Sənin evin · 🏪 partnyor zoomarketlər. (Nümunə konumlar — real Google Maps sonra.)</p>`;
+    <div class="muted" style="padding:10px 14px;display:flex;gap:14px;flex-wrap:wrap;font-size:13px">
+      <span>🏠 Sənin evin</span><span>🏪 Zoomarketlər</span><span>🩺 Vetlər</span></div>`;
   setTimeout(initMap,50);
 }
-function initMap(){
+// Kiçik, fərqli pin ikonu (ev/market/vet ayrı görünsün).
+function pinIcon(emoji){
+  return L.divIcon({html:`<div style="font-size:19px;line-height:20px;text-align:center;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))">${emoji}</div>`,
+    className:"petpin",iconSize:[22,22],iconAnchor:[11,11],popupAnchor:[0,-10]});
+}
+async function initMap(){
   if(typeof L==="undefined"){el("map").innerHTML="<p style='padding:20px' class='muted'>Xəritə üçün internet lazımdır.</p>";return;}
   const bounds=[[40.30,49.55],[40.66,50.02]]; // Bakı-Sumqayıt sərhədi
   const map=L.map("map",{maxBounds:bounds,maxBoundsViscosity:1,minZoom:10,maxZoom:15}).setView([40.47,49.80],11);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap"}).addTo(map);
-  // Müştərinin evi (nümunə)
-  L.marker([40.40,49.85]).addTo(map).bindPopup("📍 Sənin evin");
-  // Marketlər
+  // Müştərinin evi
+  L.marker([40.40,49.85],{icon:pinIcon("🏠")}).addTo(map).bindPopup("🏠 Sənin evin");
+  // Marketlər (ayrı pin)
   S.markets.forEach(m=>{ if(m.latitude&&m.longitude)
-    L.marker([m.latitude,m.longitude]).addTo(map).bindPopup("🏪 "+esc(m.name)+"<br>"+esc(m.address||"")); });
+    L.marker([m.latitude,m.longitude],{icon:pinIcon("🏪")}).addTo(map).bindPopup("🏪 "+esc(m.name)+"<br>"+esc(m.address||"")); });
+  // Vetlər (ayrı pin) — ayrıca yüklənir
+  try{
+    const vr=await api("/vets/");
+    const vets=(vr.ok&&(vr.data.results||vr.data))||[];
+    vets.forEach(v=>{ if(v.latitude&&v.longitude)
+      L.marker([v.latitude,v.longitude],{icon:pinIcon("🩺")}).addTo(map).bindPopup("🩺 "+esc(v.name)+(v.clinic?"<br>"+esc(v.clinic):"")); });
+  }catch(e){}
 }
 
 // ================= Ayarlar =================
@@ -835,10 +984,11 @@ function renderSettings(r){
     </div>
     <h2>Xidmətlər</h2>
     <div class="set-row" style="border:1.5px solid var(--brand)"><div class="faq-q" onclick="go('vet')"><span>🩺 Evə Vet çağır</span><span>›</span></div></div>
+    <h2>🍯 Bal (loyallıq)</h2>
+    <div class="set-row" style="border:1.5px solid var(--brand)"><div class="faq-q" onclick="go('bal')">
+      <span>🍯 Balım: <b>${(S.user&&S.user.bal)||0} Bal</b>${S.user&&S.user.bal_level?` · ${esc(S.user.bal_level.emoji||"")} ${esc(S.user.bal_level.name||"")}`:""}</span><span>›</span></div></div>
     <h2>Heyvanlarım</h2>
     <div class="set-row"><div class="faq-q" onclick="go('mypets')"><span>🐾 My Pets${S.pets&&S.pets.length?` (${S.pets.length})`:""}</span><span>›</span></div></div>
-    <h2>Satıcı</h2>
-    <div class="set-row" style="border:1.5px solid var(--brand)"><div class="faq-q" onclick="go('seller')"><span>🏪 Mağazam / Məhsul sat</span><span>›</span></div></div>
     <h2>${t("language")}</h2>
     <div class="set-row"><div class="lang">
       <button class="${L2==='az'?'active':''}" onclick="setLang('az')">Azərbaycanca</button>
@@ -851,9 +1001,13 @@ function renderSettings(r){
     <h2>${t("cs")}</h2>
     ${FAQ.map((f,i)=>`<div class="set-row"><div class="faq-q" onclick="toggleFaq(${i})">
       <span>${f[0]}</span><span id="fi${i}">+</span></div><div class="faq-a" id="fa${i}">${f[1]}</div></div>`).join("")}
+    <h2>🤝 Partnyor / Biznes</h2>
+    <p class="muted" style="margin:0 14px 6px;font-size:12px">Zoomarket sahibisənsə — burdan məhsul sat.</p>
+    <div class="set-row"><div class="faq-q" onclick="goSeller()"><span>🏪 Satıcı paneli${S.shop?" ✓":""}</span><span>›</span></div></div>
     <div style="height:14px"></div>
     <button class="btn ghost" style="margin:0 12px;width:calc(100% - 24px)" onclick="doLogout()">${t("signout")}</button>
     <h2>Əlaqə & Dəstək</h2>
+    <div class="set-row"><div class="faq-q" onclick="go('about')"><span>ℹ️ Haqqımızda</span><span>›</span></div></div>
     <div class="set-row"><div style="padding:12px">${contactHtml()}</div></div>
     <div class="set-row"><div class="faq-q" onclick="window.open('/sertler.html','_blank')"><span>📄 İstifadə Şərtləri</span><span>›</span></div></div>
     <div class="set-row"><div class="faq-q" onclick="window.open('/mexfilik.html','_blank')"><span>🔒 Məxfilik Siyasəti</span><span>›</span></div></div>
@@ -956,11 +1110,15 @@ async function renderSeller(r){
     <div id="sl" class="wrap"><p class="muted">Yüklənir...</p></div>`;
   const res=await api("/seller/shop/");
   S.shop=res.ok?res.data.shop:null;
+  const pilot=(res.ok&&res.data.pilot)||{};
   if(!S.shop){renderShopCreate();return;}
   const [pr,or,ea]=await Promise.all([apiAll("/seller/products/"),api("/seller/orders/"),api("/seller/earnings/")]);
   const ocount=(or.ok&&or.data)?or.data.length:0; const e=(ea.ok&&ea.data)?ea.data:{};
   el("sl").innerHTML=`
     <div class="card"><b>${esc(S.shop.name)}</b><div class="muted">${esc(S.shop.address)}</div></div>
+    ${pilot.active?`<div class="card" style="background:#fff7e6;border-color:var(--brand)">
+      🐝 <b>Pilot dövrü: komissiya 0%</b>
+      <div class="muted" style="font-size:12px;margin-top:3px">${pilot.orders_done}/${pilot.orders_max} sifariş · ${pilot.days_left} gün qalıb — hansı əvvəl dolsa, standart tariflər başlayır.</div></div>`:""}
     <button class="btn" style="font-size:17px;padding:16px" onclick="go('addproduct')">➕ Yeni məhsul əlavə et</button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 12px 0">
       <div class="card" style="text-align:center;cursor:pointer;margin:0" onclick="go('myproducts')"><div style="font-size:26px">📦</div><b>${pr.length}</b><div class="muted">Məhsul</div></div>
@@ -970,6 +1128,10 @@ async function renderSeller(r){
       <div class="row"><span>💰 Alacağın (indi)</span><b style="color:var(--ok);font-size:20px">${esc(e.payable_azn||"0.00 AZN")}</b></div>
       <div class="row muted" style="margin-top:4px"><span>Ümumi satış</span><span>${esc(e.total_sales_azn||"—")}</span></div>
       <div class="row muted"><span>Çatdırılmış sifariş</span><span>${e.delivered_count||0}</span></div>
+    </div>
+    <div class="card" style="cursor:pointer" onclick="go('settlement')">
+      <div class="row"><b>📊 Həftəlik hesabat</b><span class="muted">›</span></div>
+      <div class="muted" style="font-size:12px;margin-top:2px">Sifariş-sifariş satış, komissiya və sənə ödəniləcək məbləğ (CSV yüklə).</div>
     </div>`;
 }
 function renderShopCreate(){
@@ -1023,6 +1185,15 @@ async function renderAddProduct(r){
     <input class="f" id="npprice" inputmode="decimal" placeholder="Məs: 35.50">
     <label>Stok (neçə ədəd var)</label>
     <input class="f" id="npstock" inputmode="numeric" value="10">
+    <label>Abunəçilərə endirim % (istəyə bağlı — sən fondlayırsan)</label>
+    <input class="f" id="npsubdisc" inputmode="decimal" value="0" placeholder="Məs: 5">
+    <div class="card" style="margin:10px 0;background:#fff7e6;border-color:var(--brand);padding:10px 12px">
+      <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin:0">
+        <input type="checkbox" id="npparity" style="margin-top:3px">
+        <span style="font-size:12px"><b>Qiymət paritetini təsdiq edirəm.</b><br>
+        <span class="muted">Müqavilə üzrə: platformadakı qiymət mağazadakı qiymətdən yuxarı ola bilməz.</span></span>
+      </label>
+    </div>
     <div id="npmsg"></div>
     <button class="btn" onclick="doAddProduct()">Paylaş 🚀</button>
   </div></div>`;
@@ -1033,8 +1204,11 @@ async function doAddProduct(){
   const stock=parseInt(el("npstock").value||"0",10);
   if(!el("npname").value.trim()){el("npmsg").innerHTML=`<p class="err">Ad daxil edin.</p>`;return;}
   if(!price||price<=0){el("npmsg").innerHTML=`<p class="err">Düzgün qiymət daxil edin.</p>`;return;}
+  if(!el("npparity").checked){el("npmsg").innerHTML=`<p class="err">Davam etmək üçün qiymət paritetini təsdiq et (müqavilə şərti).</p>`;return;}
+  const subdisc=parseFloat((el("npsubdisc").value||"0").replace(",","."))||0;
   const body=JSON.stringify({name:el("npname").value,category:el("npcat").value,pet_type:NEWPET,
-    price_qepik:price,stock_qty:isNaN(stock)?0:stock,
+    price_qepik:price,stock_qty:isNaN(stock)?0:stock,parity_confirm:true,
+    sub_discount_percent:Math.max(0,Math.min(50,subdisc)),
     description:el("npdesc").value.trim(),image_data:NEWIMG});
   const r=await api("/seller/products/",{method:"POST",body});
   if(r.ok){toast("Məhsul paylaşıldı ✓");go("myproducts");}
@@ -1063,7 +1237,7 @@ async function renderMyProducts(r){
     const sp=species(p.name,p.pet_type);
     return `<div class="card" style="margin:10px 0">
       <div class="row"><b>${sp.e} ${esc(p.name)}</b><span class="tag">${p.is_active?"Aktiv":"Gizli"}</span></div>
-      ${pimgOk(p)?`<img src="${p.image_data}" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:10px;margin-top:8px">`:""}
+      ${pimgOk(p)?`<img src="${p.image_data}" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:10px;margin-top:8px" onerror="this.style.display='none'">`:""}
       <button class="alink" onclick="changeImg(${p.id})">📷 ${pimgOk(p)?"Şəkli dəyiş":"Şəkil əlavə et"}</button>
       ${p.is_sponsored?`<span class="tag" style="background:#fff3e0;color:var(--brand-d)">✨ Sponsorlu</span>`
         :`<button class="alink" onclick="sponsorReq(${p.id})">🌟 Sponsorlu et — 10 ₼/ay (önə çıxsın)</button>`}
@@ -1117,6 +1291,21 @@ async function renderSellerOrders(r){
 // ================= My Pets — heyvan profilləri =================
 function petEmoji(sp){const o=PETOPTS.find(([k])=>k===sp);return o?o[1]:"🐾";}
 async function loadPets(){const r=await apiAll("/pets/");S.pets=r||[];}
+// Heyvanın insan ili ilə təxmini yaşı (əyləncəli, paylaşılası). Yalnız it/pişik üçün.
+function petAgeYears(birth){if(!birth)return null;const b=new Date(birth);if(isNaN(b))return null;const y=(Date.now()-b.getTime())/(365.25*24*3600*1000);return y>0?y:null;}
+function humanAge(species,birth){
+  const y=petAgeYears(birth);if(y===null)return null;
+  const sp=(species||"").toUpperCase();let h;
+  if(sp==="DOG")h=y<=1?15*y:(y<=2?15+9*(y-1):24+5*(y-2));
+  else if(sp==="CAT")h=y<=1?15*y:(y<=2?15+9*(y-1):24+4*(y-2));
+  else return null;
+  return Math.max(1,Math.round(h));
+}
+async function sharePetAge(name,h){
+  const txt=`${name} insan ili ilə təxminən ${h} yaşındadır! 🐾 Sən də heyvanının yaşını Petekh-də yoxla → petekh.com`;
+  try{ if(navigator.share){await navigator.share({text:txt,url:"https://petekh.com"});return;} }catch(e){}
+  try{ await navigator.clipboard.writeText(txt); toast("Kopyalandı — paylaş! 🐾"); }catch(e){ toast(txt); }
+}
 async function renderMyPets(r){
   r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>🐾 My Pets</span><span></span></div></div>
     <div class="wrap"><button class="btn" onclick="go('addpet')">➕ Heyvan əlavə et</button>
@@ -1129,6 +1318,9 @@ async function renderMyPets(r){
       <div class="muted" style="margin-top:4px">
         ${esc(p.breed||"Cins qeyd olunmayıb")}${p.weight_kg?` · ${p.weight_kg} kq`:""}${p.sex==="MALE"?" · Erkək":p.sex==="FEMALE"?" · Dişi":""}
       </div>
+      ${(function(){const h=humanAge(p.species,p.birth_date);return h?`<div style="margin-top:6px;background:#fff7e6;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;display:flex;justify-content:space-between;align-items:center">
+        <span>🎂 İnsan yaşı ilə təxminən <b>${h}</b></span>
+        <span class="alink" style="font-size:12px" onclick="sharePetAge('${esc(p.name).replace(/'/g,'')}',${h})">paylaş ↗</span></div>`:""})()}
     </div>`).join(""):`<div class="empty"><div class="big">🐾</div><p>Hələ heyvan əlavə etməmisən.<br>Əlavə etsən, sənə uyğun məhsullar tövsiyə edərik!</p></div>`;
 }
 async function delPet(id){
@@ -1219,6 +1411,8 @@ async function renderVet(r){
         <div class="card" style="margin:8px 0">
           <div class="row"><b>🩺 ${esc(v.name)}</b>${v.emergency_ok?`<span class="tag">Təcili çıxır</span>`:""}</div>
           ${v.clinic?`<div class="muted" style="margin-top:2px">${esc(v.clinic)}</div>`:""}
+          ${v.license_no?`<div style="margin-top:3px;font-size:12px;color:var(--ok)">✅ Lisenziya: №${esc(v.license_no)}</div>`:""}
+          ${v.districts?`<div class="muted" style="margin-top:2px;font-size:11px">📍 Əhatə: ${esc(v.districts)}</div>`:""}
           <button class="btn" style="margin-top:8px" onclick="vetPick(${v.id})">Bu veti seç</button>
         </div>`).join("")||`<p class="muted">Uyğun vet tapılmadı — bir azdan yenidən yoxla.</p>`}</div>
     </div>`;
@@ -1230,8 +1424,10 @@ async function renderVet(r){
     r.innerHTML=`${top}<div class="wrap"><div class="card">
       <h2 style="margin:0">🩺 ${esc(v.name)}</h2>
       ${v.clinic?`<div class="muted">${esc(v.clinic)}</div>`:""}
+      ${v.license_no?`<div style="font-size:12px;color:var(--ok);margin-top:2px">✅ Lisenziyalı baytar həkim — №${esc(v.license_no)}</div>`:""}
       <div class="card" style="margin:12px 0;background:#fff7e6;border-color:var(--brand)">
-        🚗 <b>Vet təqribən ${eta} saat sonra qapınızda olacaq.</b></div>
+        🚗 <b>Hədəf gəliş: ~${eta} saat.</b>
+        <div class="muted" style="font-size:11px;margin-top:3px">Dəqiq vaxt vet çağırışı qəbul edəndə təsdiqlənir — təsdiq bildirişi alacaqsan.</div></div>
       <label>Ünvan</label>
       <input class="f" id="vaddr" placeholder="Məs: Bakı, Nəsimi r., Azadlıq pr. 12" value="${esc(VET.addr||"")}">
       <div class="row" style="margin:10px 0"><span>Evə baxış haqqı</span><b class="pprice">${esc(v.price_azn||"—")}</b></div>
@@ -1247,7 +1443,7 @@ async function renderVet(r){
   r.innerHTML=`${top}<div class="wrap"><div class="card" style="text-align:center">
     <div style="font-size:52px">✅</div>
     <h2>Çağırış təsdiqləndi!</h2>
-    <p><b>${esc(c.vet_name||"")}</b> təqribən <b>${c.eta_hours||2} saat</b> sonra qapınızda olacaq.</p>
+    <p><b>${esc(c.vet_name||"")}</b>${c.vet_license?` <span style="font-size:12px;color:var(--ok)">(Lisenziya №${esc(c.vet_license)})</span>`:""} təqribən <b>${c.eta_hours||2} saat</b> sonra qapınızda olacaq.</p>
     <p class="muted">💵 Ödənişi vet gələndə <b>nağd</b> edəcəksiniz${c.price_azn?` — ${esc(c.price_azn)}`:""}.</p>
     <p class="muted">Vetə bildiriş göndərildi 📲 (SMS/zəng inteqrasiyası tezliklə)</p>
     <button class="btn" onclick="vetReset();go('home')">Ana səhifə</button>
@@ -1288,37 +1484,68 @@ async function vetPay(){
 async function renderVetIncoming(r){
   r.innerHTML=`<div class="top"><div class="brand"><span>🩺 Çağırışlarım (Vet)</span>
     <button class="alink" style="padding:0" onclick="VET.incoming=null;render()">Yenilə</button></div></div>
-  <div class="wrap">${(VET.incoming.requests||[]).map(c=>`
+  <div class="wrap"><div id="vinmsg"></div>${(VET.incoming.requests||[]).map(c=>`
     <div class="card" style="margin:10px 0">
-      <div class="row"><b>Çağırış #${c.id}</b><span class="pill u-${esc(c.urgency)}" style="font-size:11px">${esc(c.urgency)}</span></div>
+      <div class="row"><b>Çağırış #${c.id}</b><span class="pill u-${esc(c.urgency)}" style="font-size:11px">PetAI: ${esc(c.urgency)}</span></div>
       <p style="margin:6px 0">${esc(c.condition)}</p>
       <div class="muted">📍 ${esc(c.address)}</div>
       <div class="muted">📞 ${esc(c.customer_phone)} · ⏱ ${c.eta_hours} saat · ${esc(c.price_azn)}</div>
-      <div class="muted" style="margin-top:4px">Status: ${esc(c.status_display)}</div>
+      <div class="muted" style="margin-top:4px">Status: ${esc(c.status_display)}${c.confirmed_urgency?` · Təsdiqin: ${esc(c.confirmed_urgency)}`:""}</div>
+      ${c.status==="NOTIFIED"?`
+      <div class="muted" style="font-size:11px;margin-top:8px">Təcililiyi SƏN təsdiqləyirsən — gəlmə öhdəliyi (SLA) təsdiqindən başlayır:</div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn" style="flex:1;padding:9px 4px;font-size:12px" onclick="vetAccept(${c.id},'EMERGENCY')">Təcili · 1s</button>
+        <button class="btn ghost" style="flex:1;padding:9px 4px;font-size:12px" onclick="vetAccept(${c.id},'URGENT')">Vacib · 2s</button>
+        <button class="btn ghost" style="flex:1;padding:9px 4px;font-size:12px" onclick="vetAccept(${c.id},'ROUTINE')">Planlı · 3s</button>
+      </div>`:""}
+      ${c.status==="ACCEPTED"?`<button class="btn" style="margin-top:8px" onclick="vetDone(${c.id})">Tamamlandı ✓ (nağd yığıldı)</button>`:""}
     </div>`).join("")||`<div class="empty"><div class="big">🩺</div><p>Hələ çağırış yoxdur.</p></div>`}
   </div>`;
+}
+async function vetAccept(id,urg){
+  const r=await api(`/vet-calls/${id}/accept/`,{method:"POST",body:JSON.stringify(urg?{urgency:urg}:{})});
+  if(!r.ok){const m=el("vinmsg");if(m)m.innerHTML=`<p class="err">${esc(r.data?.detail||"Xəta")}</p>`;return;}
+  VET.incoming=null;render();
+}
+async function vetDone(id){
+  const r=await api(`/vet-calls/${id}/done/`,{method:"POST"});
+  if(!r.ok){const m=el("vinmsg");if(m)m.innerHTML=`<p class="err">${esc(r.data?.detail||"Xəta")}</p>`;return;}
+  VET.incoming=null;render();
 }
 
 // ================= PetAI — çat interfeysi (Settings-dən) =================
 // PetAI interfeys mətnləri (seçilmiş dilə görə).
 const PAI_T={
-  az:{hi:"Salam! Mən PetAI 🐾",intro:"Heyvanının sağlamlığı, yemi, baxımı və əşyaları haqqında soruş. Bu, <b>diaqnoz deyil</b> — yalnız istiqamətdir.",
-      ask:"Heyvanın haqqında soruş...",clear:"Təmizlə",thinking:"Düşünür...",now:"DƏRHAL VETƏ",err:"Xəta baş verdi. Yenidən yoxla."},
-  en:{hi:"Hi! I'm PetAI 🐾",intro:"Ask about your pet's health, food, care and supplies. This is <b>not a diagnosis</b> — only guidance.",
-      ask:"Ask about your pet...",clear:"Clear",thinking:"Thinking...",now:"VET NOW",err:"Something went wrong. Try again."},
-  ru:{hi:"Привет! Я PetAI 🐾",intro:"Спросите о здоровье, корме, уходе и товарах для питомца. Это <b>не диагноз</b> — только рекомендация.",
-      ask:"Спросите о питомце...",clear:"Очистить",thinking:"Думаю...",now:"СРОЧНО К ВЕТУ",err:"Произошла ошибка. Попробуйте снова."},
+  az:{hi:"Salam! Mən PetAI 🐾",intro:"Heyvanının sağlamlığı, yemi, baxımı və əşyaları haqqında soruş. PetAI <b>diaqnoz qoymur</b> — yalnız istiqamətdir. Təcili haldan şübhələnirsənsə gözləmə — <b>dərhal baytara müraciət et</b>.",
+      ask:"Heyvanın haqqında soruş...",clear:"Təmizlə",thinking:"Düşünür...",now:"DƏRHAL VETƏ",err:"Xəta baş verdi. Yenidən yoxla.",
+      conf:"Uyğunluq",confnote:"Bu, məlum nümunələrə uyğunluqdur — tibbi əminlik deyil.",
+      callvet:"🩺 Baytar çağır — Evə Vet",u_urgent:"TƏCİLİ",u_routine:"PLANLI",u_info:"MƏLUMAT"},
+  en:{hi:"Hi! I'm PetAI 🐾",intro:"Ask about your pet's health, food, care and supplies. PetAI does <b>not diagnose</b> — guidance only. If you suspect an emergency, don't wait — <b>see a vet immediately</b>.",
+      ask:"Ask about your pet...",clear:"Clear",thinking:"Thinking...",now:"VET NOW",err:"Something went wrong. Try again.",
+      conf:"Match",confnote:"This is pattern match — not medical certainty.",
+      callvet:"🩺 Call a vet — Home Vet",u_urgent:"URGENT",u_routine:"ROUTINE",u_info:"INFO"},
+  ru:{hi:"Привет! Я PetAI 🐾",intro:"Спросите о здоровье, корме, уходе и товарах для питомца. PetAI <b>не ставит диагноз</b> — только рекомендации. При подозрении на экстренный случай не ждите — <b>сразу к ветеринару</b>.",
+      ask:"Спросите о питомце...",clear:"Очистить",thinking:"Думаю...",now:"СРОЧНО К ВЕТУ",err:"Произошла ошибка. Попробуйте снова.",
+      conf:"Совпадение",confnote:"Это совпадение с шаблонами — не медицинская точность.",
+      callvet:"🩺 Вызвать ветеринара",u_urgent:"СРОЧНО",u_routine:"ПЛАНОВО",u_info:"ИНФО"},
 };
+// İki çıxış sinfi: təcili → "TƏCİLİ", qalanı planlı/məlumat (ehtimal dili yoxdur).
+function uLabel(u){return (u==="EMERGENCY"||u==="URGENT")?pai("u_urgent"):(u==="ROUTINE"?pai("u_routine"):pai("u_info"));}
+// PetAI-dan vet axınına keçid — vəziyyət mətni öncədən doldurulur.
+function petaiVet(i){const m=PETAI[i];VET.cond=(m&&m.q)||"";VET.step=1;VET.incoming={is_vet:false,requests:[]};go('vet');}
 const pai=k=>(PAI_T[LANG.get()]||PAI_T.az)[k];
 var PETAI=[];
 try{PETAI=JSON.parse(localStorage.getItem("petai_chat")||"[]");}catch(e){PETAI=[];}
 function petaiSave(){try{localStorage.setItem("petai_chat",JSON.stringify(PETAI.slice(-40)));}catch(e){}}
-function petaiBubble(m){
+function petaiBubble(m,idx){
   if(m.role==="u")
     return `<div style="display:flex;justify-content:flex-end;margin:6px 0">
       <div style="background:var(--brand);color:#fff;padding:9px 13px;border-radius:16px 16px 4px 16px;max-width:80%;font-size:14px">${esc(m.text)}</div></div>`;
   if(m.err)
-    return `<div style="display:flex;margin:6px 0"><div class="card" style="margin:0;max-width:85%;padding:10px 12px"><p class="err" style="margin:0">${esc(m.err)}</p></div></div>`;
+    // QAYDA 5: xəta halında belə vet yolu İŞLƏYİR — sistem çöksə də düymə var.
+    return `<div style="display:flex;margin:6px 0"><div class="card" style="margin:0;max-width:85%;padding:10px 12px">
+      <p class="err" style="margin:0">${esc(m.err)}</p>
+      <button class="btn" style="margin-top:8px" onclick="petaiVet(${idx})">${pai("callvet")}</button></div></div>`;
   const d=m.d;
   // Sponsorlu mehsullar teklif siyahisinda ONDE gelir (nisan gosterilmir —
   // sponsorluq yalniz mehsulun oz sehifesinde bilinir).
@@ -1328,10 +1555,15 @@ function petaiBubble(m){
   return `<div style="display:flex;margin:6px 0;gap:8px">
     <div style="flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);display:flex;align-items:center;justify-content:center;font-size:15px">🐾</div>
     <div class="card" style="margin:0;max-width:82%;padding:10px 12px">
-      <span class="pill u-${esc(d.urgency)}" style="font-size:11px">${esc(d.urgency)}${d.vet_now?" · "+pai("now"):""}</span>
+      <span class="pill u-${esc(d.urgency)}" style="font-size:11px">${uLabel(d.urgency)}${d.vet_now?" · "+pai("now"):""}</span>
       <p style="margin:8px 0 4px"><b>${esc(d.summary)}</b></p>
       <p style="margin:0">${esc(d.recommended_action)}</p>
       ${(d.red_flags||[]).length?`<p class="err" style="margin:6px 0 0">⚠ ${d.red_flags.map(esc).join(", ")}</p>`:""}
+      ${d.vet_now?`<button class="btn" style="margin-top:8px" onclick="petaiVet(${idx})">${pai("callvet")}</button>`:""}
+      ${d.confidence?`<div style="margin-top:8px">
+        <div class="muted" style="font-size:11px;display:flex;justify-content:space-between"><span>${pai("conf")}</span><span>${d.confidence}%</span></div>
+        <div style="background:#f0e6d0;border-radius:6px;height:6px;overflow:hidden;margin-top:2px"><div style="width:${d.confidence}%;height:100%;background:${d.confidence>=70?'#2e8b57':(d.confidence>=45?'#F49B0D':'#c0392b')}"></div></div>
+        <div class="muted" style="font-size:10px;margin-top:3px">${pai("confnote")}</div></div>`:""}
       ${prods?`<div style="margin-top:6px;border-top:1px solid var(--line);padding-top:4px">${prods}</div>`:""}
     </div></div>`;
 }
@@ -1361,10 +1593,67 @@ async function petaiSend(){
   el("chat").innerHTML=petaiChatHtml()+`<div style="display:flex;margin:6px 0;gap:8px"><div style="flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);display:flex;align-items:center;justify-content:center;font-size:15px">🐾</div><p class="muted" style="margin:6px 0">${pai("thinking")}</p></div>`;
   window.scrollTo(0,document.body.scrollHeight);
   const r=await api("/triage/",{method:"POST",body:JSON.stringify({message:q,lang:LANG.get()})});
-  if(r.ok)PETAI.push({role:"a",d:r.data});
-  else PETAI.push({role:"a",err:r.data?.detail||pai("err")});
+  if(r.ok)PETAI.push({role:"a",d:r.data,q});
+  else PETAI.push({role:"a",err:r.data?.detail||pai("err"),q});
   petaiSave();
   const c=el("chat"); if(c){c.innerHTML=petaiChatHtml();window.scrollTo(0,document.body.scrollHeight);}
+}
+
+// ================= Satıcı: həftəlik hesabat (müqavilə §5.3) =================
+var STL={week:""};
+async function renderSettlement(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('seller')">‹</button><span>📊 Həftəlik hesabat</span><span></span></div></div>
+    <div class="wrap"><div id="stl"><p class="muted">Yüklənir...</p></div></div>`;
+  const q=STL.week?`?week=${STL.week}`:"";
+  const res=await api(`/seller/settlement/${q}`);
+  if(!res.ok){el("stl").innerHTML=`<p class="err">${esc(res.data?.detail||"Xəta")}</p>`;return;}
+  const d=res.data,t=d.totals;
+  el("stl").innerHTML=`
+    <div class="card">
+      <div class="row"><b>Həftə</b><span>${esc(d.week_start)} — ${esc(d.week_end)}</span></div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn ghost" style="flex:1;padding:8px" onclick="stlShift(-7)">‹ Əvvəlki</button>
+        <button class="btn ghost" style="flex:1;padding:8px" onclick="stlShift(7)">Sonrakı ›</button>
+      </div>
+    </div>
+    <div class="card" style="background:#eefaf0;border-color:var(--ok)">
+      <div class="row"><span>Ümumi satış</span><b>${esc(t.gross_azn)}</b></div>
+      <div class="row muted"><span>Komissiya</span><span>−${esc(t.commission_azn)}</span></div>
+      <div class="row" style="font-size:17px;margin-top:4px"><b>Sənə ödəniləcək</b><b style="color:var(--ok)">${esc(t.net_azn)}</b></div>
+      <div class="muted" style="font-size:11px;margin-top:4px">Status: ${d.payout&&d.payout.status==="PAID"?"✅ Ödənilib":"⏳ Gözləyir"} · Çatdırılma haqqı bura daxil deyil (kuryerindir)</div>
+    </div>
+    ${(d.lines||[]).length?`<div class="card" style="padding:10px 12px">${d.lines.map(l=>`
+      <div style="border-bottom:1px dashed var(--line);padding:6px 0;font-size:13px">
+        <div class="row"><b>${esc(l.product)}</b><span>${(l.amount_qepik/100).toFixed(2)} ₼</span></div>
+        <div class="row muted" style="font-size:11px"><span>${esc(l.date)} · Sifariş #${l.order} · ${l.qty} əd.</span><span>komissiya ${l.rate}% = ${(l.commission_qepik/100).toFixed(2)} ₼</span></div>
+      </div>`).join("")}</div>`:`<div class="empty"><div class="big">📭</div><p>Bu həftə tamamlanmış sifariş yoxdur.</p></div>`}
+    <button class="btn ghost" onclick="stlCsv()">⬇ CSV yüklə (öz dəftərinlə tutuşdur)</button>
+    <div class="card" style="margin-top:10px">
+      <b style="font-size:13px">Hesabatla razı deyilsən?</b>
+      <textarea class="f" id="stlnote" rows="2" placeholder="Nəyin düz gəlmədiyini yaz (5 iş günü ərzində baxılır)"></textarea>
+      <div id="stlmsg"></div>
+      <button class="btn ghost" onclick="stlObject('${esc(d.week_start)}')">Etiraz göndər</button>
+    </div>`;
+  STL.week=d.week_start;
+}
+function stlShift(days){
+  const d=new Date(STL.week);d.setDate(d.getDate()+days);
+  STL.week=d.toISOString().slice(0,10);render();
+}
+async function stlCsv(){
+  const q=STL.week?`?week=${STL.week}&csv=1`:"?csv=1";
+  const r=await fetch(API+`/seller/settlement/${q}`,{headers:{Authorization:"Token "+T.get()}});
+  if(!r.ok){toast("CSV alına bilmədi");return;}
+  const blob=await r.blob();const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download=`hesabat-${STL.week||"hefte"}.csv`;a.click();
+  URL.revokeObjectURL(a.href);
+}
+async function stlObject(week){
+  const note=(el("stlnote").value||"").trim();
+  if(!note){el("stlmsg").innerHTML=`<p class="err">Qeyd yaz.</p>`;return;}
+  const r=await api("/seller/settlement/",{method:"POST",body:JSON.stringify({week,note})});
+  el("stlmsg").innerHTML=r.ok?`<p style="color:var(--ok)">✓ ${esc(r.data.detail)}</p>`
+                             :`<p class="err">${esc(r.data?.detail||"Xəta")}</p>`;
 }
 
 // ================= Başlanğıc =================
@@ -1389,12 +1678,82 @@ render=async function(){
   if(S.view==="addpet"){renderNav();return renderAddPet(el("root"));}
   if(S.view==="vet"){renderNav();return renderVet(el("root"));}
   if(S.view==="seller"){renderNav();return renderSeller(el("root"));}
+  if(S.view==="settlement"){renderNav();return renderSettlement(el("root"));}
   if(S.view==="addproduct"){renderNav();return renderAddProduct(el("root"));}
   if(S.view==="myproducts"){renderNav();return renderMyProducts(el("root"));}
   if(S.view==="sellerorders"){renderNav();return renderSellerOrders(el("root"));}
   if(S.view==="paydone"){renderNav();return renderPayDone(el("root"));}
+  if(S.view==="about"){renderNav();return renderAbout(el("root"));}
+  if(S.view==="bal"){renderNav();return renderBal(el("root"));}
   return _origRender();
 };
+// ================= Bal (loyallıq) =================
+async function renderBal(r){
+  // Ən təzə balansı gətir.
+  try{const me=await api("/auth/me/");if(me.ok)S.user=me.data;}catch(e){}
+  const u=S.user||{};const lv=u.bal_level||{name:"Yeni pətək",emoji:"🐝",progress:0};
+  const prog=lv.progress||0;
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>🍯 Bal</span><span></span></div></div>
+  <div class="wrap">
+    <div class="card" style="text-align:center;background:linear-gradient(135deg,#FFF8EC,#FDEBC8);border-color:var(--brand)">
+      <div style="font-size:40px">${lv.emoji||"🐝"}</div>
+      <div class="muted" style="font-size:12px">Səviyyə</div>
+      <h2 style="margin:2px 0 8px">${esc(lv.name||"")}</h2>
+      <div style="font-size:34px;font-weight:800;color:var(--brand-d)">${u.bal||0} Bal</div>
+      <div class="muted" style="font-size:13px">= ${esc(u.bal_azn||"0.00 AZN")} endirim dəyəri</div>
+      <div style="background:#f0e6d0;border-radius:20px;height:12px;margin:14px 0 6px;overflow:hidden">
+        <div style="width:${prog}%;height:100%;background:linear-gradient(90deg,#F7B21B,#EC8A0E)"></div></div>
+      ${lv.next_name?`<div class="muted" style="font-size:12px">Növbəti səviyyə: <b>${esc(lv.next_name)}</b> — daha ${lv.to_next} Bal</div>`:`<div class="muted" style="font-size:12px">Ən yüksək səviyyədəsən! 👑</div>`}
+    </div>
+    <div class="card">
+      <h2 style="margin:0 0 6px">🍯 Bal necə işləyir?</h2>
+      <p style="margin:0;white-space:pre-line">• Hər <b>1 ₼</b> alış-verişə <b>1 Bal</b> qazan.
+• Bal yığıldıqca <b>pətəyin dolur</b>, səviyyən qalxır.
+• Balını <b>səbətdə endirimə</b> çevir (50 Bal = 1 ₼).
+• Nə qədər çox alsan, o qədər çox qazan! 🐝</p>
+    </div>
+    <button class="btn" onclick="go('home')">Alış-verişə başla 🛒</button>
+  </div>`;
+}
+// ================= Haqqımızda (About us) =================
+function renderAbout(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('settings')">‹</button><span>Haqqımızda</span><span></span></div></div>
+  <div class="wrap">
+    <div style="text-align:center;margin:14px 0 8px">
+      <img src="/logo-mark-t.png?v=3" width="80" height="80" alt="Petekh">
+      <h2 style="margin:8px 0 2px">Petekh</h2>
+      <p class="muted" style="margin:0">Ev heyvanların üçün hər şey — qapına qədər.</p>
+    </div>
+    <div class="card">
+      <h2 style="margin:0 0 6px">🐾 Missiyamız</h2>
+      <p style="margin:0">Petekh Bakı–Sumqayıtda ev heyvanı sahiblərini yerli zoomarketlər və baytarlarla
+      bir yerdə toplayan platformadır. Məqsədimiz: heyvanının yeminə, əşyasına, sağlamlığına lazım olan
+      hər şeyi <b>bir toxunuşla, evinə</b> çatdırmaq.</p>
+    </div>
+    <div class="card">
+      <h2 style="margin:0 0 6px">🍯 Niyə "Petekh"?</h2>
+      <p style="margin:0">"Pətək" — arıların birlikdə qurduğu ev. Biz də zoomarketləri, baytarları və
+      heyvan sahiblərini bir pətəkdə birləşdiririk. Loqomuzdakı pətək və pəncə məhz bunu ifadə edir.</p>
+    </div>
+    <div class="card">
+      <h2 style="margin:0 0 6px">🤝 Nə təklif edirik</h2>
+      <p style="margin:0;white-space:pre-line">🛒 Zoomarket məhsulları — bir yerdə
+🚚 Bakı–Sumqayıt üzrə çatdırılma
+🩺 Evə baytar çağırışı
+🐾 PetAI — heyvanın üçün ağıllı köməkçi</p>
+    </div>
+    <div class="card">
+      <h2 style="margin:0 0 6px">📞 Əlaqə</h2>
+      ${contactHtml()}
+    </div>
+    <p class="muted" style="text-align:center;margin:14px 0">Petekh · Bakı–Sumqayıt 🐾</p>
+  </div>`;
+}
+// Satıcı panelinə keçid — adi istifadəçi təsadüfən girib qarışdırmasın deyə təsdiq soruşulur.
+function goSeller(){
+  if(S.shop){go('seller');return;}
+  if(confirm("Bu bölmə ZOOMARKET SAHİBLƏRİ üçündür — burada məhsul satırsan.\n\nSatıcı hesabı açmaq istəyirsən?")) go('seller');
+}
 async function init(){ if(T.get())await boot(); render(); }
 init();
 
