@@ -43,7 +43,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=20260724"></script>
+<script src="config.js?v=20260725"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -625,8 +625,8 @@ function renderProduct(r){
       <div style="margin-top:10px"><span class="tag">${p.category}</span> <span class="tag">Stok: ${p.stock_qty}</span></div>
       <div style="margin-top:12px"><button class="btn" onclick="addCart(${p.id})">🛒 ${t("add")}</button></div>
       <div style="margin-top:8px">
-        <button class="btn ghost" onclick="subBtn(${p.id})">📦 Aylıq abunə ol — PULSUZ</button>
-        <div class="muted" style="font-size:12px;margin-top:5px;color:var(--ok);font-weight:600">🎁 2-ci aydan hər ay 5% endirim</div>
+        <button class="btn ghost" onclick="subBtn(${p.id})">📦 Abunə ol — avtomatik gəlsin</button>
+        ${(+p.sub_discount_percent||0)>0?`<div class="muted" style="font-size:12px;margin-top:5px;color:var(--ok);font-weight:600">🎁 Abunəçilərə ${+p.sub_discount_percent}% endirim (mağazadan)</div>`:""}
       </div>
       <div id="subpanel"></div>
     </div>
@@ -655,15 +655,49 @@ function toast(msg){
   x.textContent=msg;x.style.opacity="1";clearTimeout(window._tt);window._tt=setTimeout(()=>x.style.opacity="0",1800);
 }
 
-// ---- Abunelik (PULSUZ + 2-ci aydan 5% endirim) ----
+// ---- Abunelik: istehlak kalkulyatoru + rayon/gun (marsrut sixligi) ----
+// Yem sərfiyyatı DÜSTURDUR, AI deyil (backend feeding_estimate ilə eyni əmsallar).
+const FEED_COEF={cat:{perkg:12,min:40,max:90,fb:60},dog:{perkg:15,min:80,max:500,fb:250}};
+const SUB_DISTRICTS=[["","Rayon seç (istəyə bağlı)"],["BINEQEDI","Binəqədi"],["XETAI","Xətai"],["XEZER","Xəzər"],["QARADAG","Qaradağ"],["NERIMANOV","Nərimanov"],["NESIMI","Nəsimi"],["NIZAMI","Nizami"],["SABUNCU","Sabunçu"],["SEBAIL","Səbail"],["SURAXANI","Suraxanı"],["YASAMAL","Yasamal"],["SUMQAYIT","Sumqayıt"],["ABSHERON","Abşeron"],["OTHER","Digər"]];
+const SUB_DAYS=[["","Fərq etməz"],["MON","B.e"],["TUE","Ç.a"],["WED","Çərşənbə"],["THU","C.a"],["FRI","Cümə"],["SAT","Şənbə"],["SUN","Bazar"]];
+function feedCalc(p){
+  // Mehsul adindan torba cekisi + pet profilinden heyvan cekisi -> nece gune catir.
+  const bag=(p.name||"").match(/(\d+[\.,]?\d*)\s*(kq|kg)/i);
+  if(!bag)return null;
+  const bagKg=parseFloat(bag[1].replace(",","."));
+  const pet=(S.pets||[]).find(x=>(x.species==="CAT"||x.species==="DOG")&&x.weight_kg);
+  if(!pet)return null;
+  const c=FEED_COEF[pet.species==="CAT"?"cat":"dog"];
+  const w=parseFloat(pet.weight_kg);
+  const daily=w?Math.max(c.min,Math.min(c.max,Math.round(w*c.perkg))):c.fb;
+  const days=Math.round(bagKg*1000/daily);
+  return {pet,bagKg,daily,days,suggest:days>=25?"MONTHLY":"WEEKLY"};
+}
 function subBtn(pid){
   const box=el("subpanel"); if(!box){doProductSub(pid);return;}
+  const p=findP(pid)||{};
+  const disc=+p.sub_discount_percent||0;
+  const fc=feedCalc(p);
   box.innerHTML=`
     <div class="card" style="margin:10px 0;border:1.5px solid var(--brand)">
-      <b>İstədiyin məhsula abunə ol, hər ay sifariş vermədən qapında olsun!</b>
-      <p class="muted" style="margin:8px 0">Abunə olmaq <b>tamamilə pulsuzdur</b> — hər ay avtomatik sifariş olunub qapına gətirilir. İstədiyin vaxt ləğv edə bilərsən.</p>
-      <p style="margin:8px 0;color:var(--ok);font-weight:700">🎁 2-ci aydan hər ay 5% endirim!</p>
-      <button class="btn" onclick="doProductSub(${pid})">Pulsuz abunə ol 📦</button>
+      <b>Abunə ol — sifariş vermədən qapında olsun 📦</b>
+      ${fc?`<div class="card" style="margin:8px 0;background:#fff7e6;border-color:var(--brand);padding:10px 12px;font-size:13px">
+        🧮 <b>${esc(fc.pet.name)}</b> (${fc.pet.weight_kg} kq) → gündə ~${fc.daily} q →
+        ${fc.bagKg} kq torba ~<b>${fc.days} gün</b> çatır →
+        <b>${fc.suggest==="MONTHLY"?"aylıq":"həftəlik"}</b> məsləhətdir.
+        <div class="muted" style="font-size:11px;margin-top:3px">Bu, orta təxmindir — intervalı özün seç, istənilən vaxt dəyiş.</div></div>`:""}
+      ${disc>0?`<p style="margin:8px 0;color:var(--ok);font-weight:700">🎁 Abunəçilərə ${disc}% endirim — mağaza hədiyyəsi!</p>`:""}
+      <label>Tezlik</label>
+      <select class="f" id="subint">
+        <option value="MONTHLY" ${(!fc||fc.suggest==="MONTHLY")?"selected":""}>Aylıq</option>
+        <option value="WEEKLY" ${fc&&fc.suggest==="WEEKLY"?"selected":""}>Həftəlik</option>
+      </select>
+      <label>Rayon</label>
+      <select class="f" id="subdist">${SUB_DISTRICTS.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select>
+      <label>Çatdırılma günü</label>
+      <select class="f" id="subday">${SUB_DAYS.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select>
+      <p class="muted" style="font-size:11px;margin:6px 0">Hər çatdırılmada adi çatdırılma haqqı tutulur. İstədiyin vaxt dayandır/ləğv et — pulsuzdur.</p>
+      <button class="btn" onclick="doProductSub(${pid})">Abunə ol 📦</button>
       <div id="submsg"></div>
     </div>`;
 }
@@ -675,10 +709,12 @@ async function doProductSub(pid){
     if(addr.length<8){toast("Ünvan tam yazılmadı");return;}
     ADDR.set(addr);
   }
-  const body=JSON.stringify({market:p.market,interval:"MONTHLY",
-    delivery_address:addr,items:[{product:pid,quantity:1}]});
-  const r=await api("/subscriptions/",{method:"POST",body});
-  if(r.ok){toast("Abunə olundu! Hər ay qapında 📦");render();}
+  const body={market:p.market,interval:(el("subint")&&el("subint").value)||"MONTHLY",
+    delivery_address:addr,items:[{product:pid,quantity:1}]};
+  const dist=el("subdist")&&el("subdist").value; if(dist)body.district=dist;
+  const day=el("subday")&&el("subday").value; if(day)body.preferred_delivery_day=day;
+  const r=await api("/subscriptions/",{method:"POST",body:JSON.stringify(body)});
+  if(r.ok){toast("Abunə olundu! Avtomatik qapında 📦");render();}
   else{const box=el("subpanel");if(box)box.innerHTML=`<p class="err">${esc(r.data?.detail||JSON.stringify(r.data))}</p>`;}
 }
 
@@ -726,11 +762,12 @@ function renderCart(r){
 }
 function chQty(id,d){const c=S.cart[id];if(!c)return;c.qty+=d;if(c.qty<=0)delete S.cart[id];render();}
 // Minimum sifaris meblegi (qepik) — backend ile eynidir. 5 AZN-e endirende 500 yaz.
-const MIN_ORDER_QEPIK=1000;
+const MIN_ORDER_QEPIK=2500; // 25 AZN (müqavilə: kiçik sifariş kuryer xərcini ödəmir)
 // Catdirilma haqqi — backend ile eynidir (kuryer xerci musteriden).
 // Catdirilma tarifleri (backend ile eyni). Eyni zona / zonalar arasi.
-const DELIVERY_FEE_QEPIK=299, FREE_DELIVERY_FROM_QEPIK=3000;
-const DELIVERY_FEE_CROSS_QEPIK=599, FREE_DELIVERY_CROSS_FROM_QEPIK=6000;
+// PULSUZ ÇATDIRILMA YOXDUR (0 = deaktiv) — güzəşt "çox mağaza, tək haqq"dır.
+const DELIVERY_FEE_QEPIK=299, FREE_DELIVERY_FROM_QEPIK=0;
+const DELIVERY_FEE_CROSS_QEPIK=599, FREE_DELIVERY_CROSS_FROM_QEPIK=0;
 // Unvandan zona tap (backend detect_zone ile eyni mentiq).
 function detectZone(txt){
   const t=(txt||"").toLowerCase().replace(/ı/g,"i").replace(/ş/g,"s").replace(/ə/g,"e");
@@ -754,7 +791,7 @@ function calcDelivery(sub,addr){
     const same=z===custZone; if(!same)cross=true;
     const f=same?DELIVERY_FEE_QEPIK:DELIVERY_FEE_CROSS_QEPIK;
     const free=same?FREE_DELIVERY_FROM_QEPIK:FREE_DELIVERY_CROSS_FROM_QEPIK;
-    fee+=groups[z]>=free?0:f;
+    fee+=(free>0&&groups[z]>=free)?0:f;
   });
   const storeCount=new Set(Object.values(S.cart).map(c=>c.p.market)).size;
   return {fee, cross, free:FREE_DELIVERY_FROM_QEPIK, zones:Object.keys(groups).length, stores:storeCount};
@@ -819,7 +856,7 @@ function paySummaryHtml(sub,addr){
     ${disc?`<div class="row" style="margin-top:4px;color:var(--ok)"><span>${discLabel}</span><span>−${azn(disc)}</span></div>`:""}
     <div class="row muted" style="margin-top:4px"><span>${t("delivery")}${d.cross?" (zonalararası)":""}${d.stores>1?" · birləşmiş":""}</span>
       ${d.fee?`<span>${azn(d.fee)}</span>`:`<span style="color:var(--ok)">Pulsuz ✓</span>`}</div>
-    ${d.stores>1?`<div class="muted" style="font-size:11px;text-align:right;color:var(--ok)">🚚 ${d.stores} mağaza, bir kuryer — tək haqq</div>`:(d.fee?`<div class="muted" style="font-size:11px;text-align:right">${azn(d.free)}-dən yuxarı çatdırılma pulsuzdur</div>`:"")}
+    ${d.stores>1?`<div class="muted" style="font-size:11px;text-align:right;color:var(--ok)">🚚 ${d.stores} mağaza, bir kuryer — tək haqq</div>`:(d.fee&&d.free>0?`<div class="muted" style="font-size:11px;text-align:right">${azn(d.free)}-dən yuxarı çatdırılma pulsuzdur</div>`:"")}
     <div class="row" style="margin-top:6px;font-size:18px"><b>Yekun</b><b style="color:var(--price)">${azn(sub-disc+d.fee)}</b></div>`;
 }
 function updatePaySummary(sub){const b=el("paysummary");if(b)b.innerHTML=paySummaryHtml(sub,el("caddr").value);}
@@ -1073,11 +1110,15 @@ async function renderSeller(r){
     <div id="sl" class="wrap"><p class="muted">Yüklənir...</p></div>`;
   const res=await api("/seller/shop/");
   S.shop=res.ok?res.data.shop:null;
+  const pilot=(res.ok&&res.data.pilot)||{};
   if(!S.shop){renderShopCreate();return;}
   const [pr,or,ea]=await Promise.all([apiAll("/seller/products/"),api("/seller/orders/"),api("/seller/earnings/")]);
   const ocount=(or.ok&&or.data)?or.data.length:0; const e=(ea.ok&&ea.data)?ea.data:{};
   el("sl").innerHTML=`
     <div class="card"><b>${esc(S.shop.name)}</b><div class="muted">${esc(S.shop.address)}</div></div>
+    ${pilot.active?`<div class="card" style="background:#fff7e6;border-color:var(--brand)">
+      🐝 <b>Pilot dövrü: komissiya 0%</b>
+      <div class="muted" style="font-size:12px;margin-top:3px">${pilot.orders_done}/${pilot.orders_max} sifariş · ${pilot.days_left} gün qalıb — hansı əvvəl dolsa, standart tariflər başlayır.</div></div>`:""}
     <button class="btn" style="font-size:17px;padding:16px" onclick="go('addproduct')">➕ Yeni məhsul əlavə et</button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 12px 0">
       <div class="card" style="text-align:center;cursor:pointer;margin:0" onclick="go('myproducts')"><div style="font-size:26px">📦</div><b>${pr.length}</b><div class="muted">Məhsul</div></div>
@@ -1087,6 +1128,10 @@ async function renderSeller(r){
       <div class="row"><span>💰 Alacağın (indi)</span><b style="color:var(--ok);font-size:20px">${esc(e.payable_azn||"0.00 AZN")}</b></div>
       <div class="row muted" style="margin-top:4px"><span>Ümumi satış</span><span>${esc(e.total_sales_azn||"—")}</span></div>
       <div class="row muted"><span>Çatdırılmış sifariş</span><span>${e.delivered_count||0}</span></div>
+    </div>
+    <div class="card" style="cursor:pointer" onclick="go('settlement')">
+      <div class="row"><b>📊 Həftəlik hesabat</b><span class="muted">›</span></div>
+      <div class="muted" style="font-size:12px;margin-top:2px">Sifariş-sifariş satış, komissiya və sənə ödəniləcək məbləğ (CSV yüklə).</div>
     </div>`;
 }
 function renderShopCreate(){
@@ -1140,6 +1185,15 @@ async function renderAddProduct(r){
     <input class="f" id="npprice" inputmode="decimal" placeholder="Məs: 35.50">
     <label>Stok (neçə ədəd var)</label>
     <input class="f" id="npstock" inputmode="numeric" value="10">
+    <label>Abunəçilərə endirim % (istəyə bağlı — sən fondlayırsan)</label>
+    <input class="f" id="npsubdisc" inputmode="decimal" value="0" placeholder="Məs: 5">
+    <div class="card" style="margin:10px 0;background:#fff7e6;border-color:var(--brand);padding:10px 12px">
+      <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin:0">
+        <input type="checkbox" id="npparity" style="margin-top:3px">
+        <span style="font-size:12px"><b>Qiymət paritetini təsdiq edirəm.</b><br>
+        <span class="muted">Müqavilə üzrə: platformadakı qiymət mağazadakı qiymətdən yuxarı ola bilməz.</span></span>
+      </label>
+    </div>
     <div id="npmsg"></div>
     <button class="btn" onclick="doAddProduct()">Paylaş 🚀</button>
   </div></div>`;
@@ -1150,8 +1204,11 @@ async function doAddProduct(){
   const stock=parseInt(el("npstock").value||"0",10);
   if(!el("npname").value.trim()){el("npmsg").innerHTML=`<p class="err">Ad daxil edin.</p>`;return;}
   if(!price||price<=0){el("npmsg").innerHTML=`<p class="err">Düzgün qiymət daxil edin.</p>`;return;}
+  if(!el("npparity").checked){el("npmsg").innerHTML=`<p class="err">Davam etmək üçün qiymət paritetini təsdiq et (müqavilə şərti).</p>`;return;}
+  const subdisc=parseFloat((el("npsubdisc").value||"0").replace(",","."))||0;
   const body=JSON.stringify({name:el("npname").value,category:el("npcat").value,pet_type:NEWPET,
-    price_qepik:price,stock_qty:isNaN(stock)?0:stock,
+    price_qepik:price,stock_qty:isNaN(stock)?0:stock,parity_confirm:true,
+    sub_discount_percent:Math.max(0,Math.min(50,subdisc)),
     description:el("npdesc").value.trim(),image_data:NEWIMG});
   const r=await api("/seller/products/",{method:"POST",body});
   if(r.ok){toast("Məhsul paylaşıldı ✓");go("myproducts");}
@@ -1354,6 +1411,8 @@ async function renderVet(r){
         <div class="card" style="margin:8px 0">
           <div class="row"><b>🩺 ${esc(v.name)}</b>${v.emergency_ok?`<span class="tag">Təcili çıxır</span>`:""}</div>
           ${v.clinic?`<div class="muted" style="margin-top:2px">${esc(v.clinic)}</div>`:""}
+          ${v.license_no?`<div style="margin-top:3px;font-size:12px;color:var(--ok)">✅ Lisenziya: №${esc(v.license_no)}</div>`:""}
+          ${v.districts?`<div class="muted" style="margin-top:2px;font-size:11px">📍 Əhatə: ${esc(v.districts)}</div>`:""}
           <button class="btn" style="margin-top:8px" onclick="vetPick(${v.id})">Bu veti seç</button>
         </div>`).join("")||`<p class="muted">Uyğun vet tapılmadı — bir azdan yenidən yoxla.</p>`}</div>
     </div>`;
@@ -1365,8 +1424,10 @@ async function renderVet(r){
     r.innerHTML=`${top}<div class="wrap"><div class="card">
       <h2 style="margin:0">🩺 ${esc(v.name)}</h2>
       ${v.clinic?`<div class="muted">${esc(v.clinic)}</div>`:""}
+      ${v.license_no?`<div style="font-size:12px;color:var(--ok);margin-top:2px">✅ Lisenziyalı baytar həkim — №${esc(v.license_no)}</div>`:""}
       <div class="card" style="margin:12px 0;background:#fff7e6;border-color:var(--brand)">
-        🚗 <b>Vet təqribən ${eta} saat sonra qapınızda olacaq.</b></div>
+        🚗 <b>Hədəf gəliş: ~${eta} saat.</b>
+        <div class="muted" style="font-size:11px;margin-top:3px">Dəqiq vaxt vet çağırışı qəbul edəndə təsdiqlənir — təsdiq bildirişi alacaqsan.</div></div>
       <label>Ünvan</label>
       <input class="f" id="vaddr" placeholder="Məs: Bakı, Nəsimi r., Azadlıq pr. 12" value="${esc(VET.addr||"")}">
       <div class="row" style="margin:10px 0"><span>Evə baxış haqqı</span><b class="pprice">${esc(v.price_azn||"—")}</b></div>
@@ -1382,7 +1443,7 @@ async function renderVet(r){
   r.innerHTML=`${top}<div class="wrap"><div class="card" style="text-align:center">
     <div style="font-size:52px">✅</div>
     <h2>Çağırış təsdiqləndi!</h2>
-    <p><b>${esc(c.vet_name||"")}</b> təqribən <b>${c.eta_hours||2} saat</b> sonra qapınızda olacaq.</p>
+    <p><b>${esc(c.vet_name||"")}</b>${c.vet_license?` <span style="font-size:12px;color:var(--ok)">(Lisenziya №${esc(c.vet_license)})</span>`:""} təqribən <b>${c.eta_hours||2} saat</b> sonra qapınızda olacaq.</p>
     <p class="muted">💵 Ödənişi vet gələndə <b>nağd</b> edəcəksiniz${c.price_azn?` — ${esc(c.price_azn)}`:""}.</p>
     <p class="muted">Vetə bildiriş göndərildi 📲 (SMS/zəng inteqrasiyası tezliklə)</p>
     <button class="btn" onclick="vetReset();go('home')">Ana səhifə</button>
@@ -1423,40 +1484,68 @@ async function vetPay(){
 async function renderVetIncoming(r){
   r.innerHTML=`<div class="top"><div class="brand"><span>🩺 Çağırışlarım (Vet)</span>
     <button class="alink" style="padding:0" onclick="VET.incoming=null;render()">Yenilə</button></div></div>
-  <div class="wrap">${(VET.incoming.requests||[]).map(c=>`
+  <div class="wrap"><div id="vinmsg"></div>${(VET.incoming.requests||[]).map(c=>`
     <div class="card" style="margin:10px 0">
-      <div class="row"><b>Çağırış #${c.id}</b><span class="pill u-${esc(c.urgency)}" style="font-size:11px">${esc(c.urgency)}</span></div>
+      <div class="row"><b>Çağırış #${c.id}</b><span class="pill u-${esc(c.urgency)}" style="font-size:11px">PetAI: ${esc(c.urgency)}</span></div>
       <p style="margin:6px 0">${esc(c.condition)}</p>
       <div class="muted">📍 ${esc(c.address)}</div>
       <div class="muted">📞 ${esc(c.customer_phone)} · ⏱ ${c.eta_hours} saat · ${esc(c.price_azn)}</div>
-      <div class="muted" style="margin-top:4px">Status: ${esc(c.status_display)}</div>
+      <div class="muted" style="margin-top:4px">Status: ${esc(c.status_display)}${c.confirmed_urgency?` · Təsdiqin: ${esc(c.confirmed_urgency)}`:""}</div>
+      ${c.status==="NOTIFIED"?`
+      <div class="muted" style="font-size:11px;margin-top:8px">Təcililiyi SƏN təsdiqləyirsən — gəlmə öhdəliyi (SLA) təsdiqindən başlayır:</div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn" style="flex:1;padding:9px 4px;font-size:12px" onclick="vetAccept(${c.id},'EMERGENCY')">Təcili · 1s</button>
+        <button class="btn ghost" style="flex:1;padding:9px 4px;font-size:12px" onclick="vetAccept(${c.id},'URGENT')">Vacib · 2s</button>
+        <button class="btn ghost" style="flex:1;padding:9px 4px;font-size:12px" onclick="vetAccept(${c.id},'ROUTINE')">Planlı · 3s</button>
+      </div>`:""}
+      ${c.status==="ACCEPTED"?`<button class="btn" style="margin-top:8px" onclick="vetDone(${c.id})">Tamamlandı ✓ (nağd yığıldı)</button>`:""}
     </div>`).join("")||`<div class="empty"><div class="big">🩺</div><p>Hələ çağırış yoxdur.</p></div>`}
   </div>`;
+}
+async function vetAccept(id,urg){
+  const r=await api(`/vet-calls/${id}/accept/`,{method:"POST",body:JSON.stringify(urg?{urgency:urg}:{})});
+  if(!r.ok){const m=el("vinmsg");if(m)m.innerHTML=`<p class="err">${esc(r.data?.detail||"Xəta")}</p>`;return;}
+  VET.incoming=null;render();
+}
+async function vetDone(id){
+  const r=await api(`/vet-calls/${id}/done/`,{method:"POST"});
+  if(!r.ok){const m=el("vinmsg");if(m)m.innerHTML=`<p class="err">${esc(r.data?.detail||"Xəta")}</p>`;return;}
+  VET.incoming=null;render();
 }
 
 // ================= PetAI — çat interfeysi (Settings-dən) =================
 // PetAI interfeys mətnləri (seçilmiş dilə görə).
 const PAI_T={
-  az:{hi:"Salam! Mən PetAI 🐾",intro:"Heyvanının sağlamlığı, yemi, baxımı və əşyaları haqqında soruş. Bu, <b>diaqnoz deyil</b> — yalnız istiqamətdir.",
+  az:{hi:"Salam! Mən PetAI 🐾",intro:"Heyvanının sağlamlığı, yemi, baxımı və əşyaları haqqında soruş. PetAI <b>diaqnoz qoymur</b> — yalnız istiqamətdir. Təcili haldan şübhələnirsənsə gözləmə — <b>dərhal baytara müraciət et</b>.",
       ask:"Heyvanın haqqında soruş...",clear:"Təmizlə",thinking:"Düşünür...",now:"DƏRHAL VETƏ",err:"Xəta baş verdi. Yenidən yoxla.",
-      conf:"Uyğunluq",confnote:"Bu, məlum nümunələrə uyğunluqdur — tibbi əminlik deyil."},
-  en:{hi:"Hi! I'm PetAI 🐾",intro:"Ask about your pet's health, food, care and supplies. This is <b>not a diagnosis</b> — only guidance.",
+      conf:"Uyğunluq",confnote:"Bu, məlum nümunələrə uyğunluqdur — tibbi əminlik deyil.",
+      callvet:"🩺 Baytar çağır — Evə Vet",u_urgent:"TƏCİLİ",u_routine:"PLANLI",u_info:"MƏLUMAT"},
+  en:{hi:"Hi! I'm PetAI 🐾",intro:"Ask about your pet's health, food, care and supplies. PetAI does <b>not diagnose</b> — guidance only. If you suspect an emergency, don't wait — <b>see a vet immediately</b>.",
       ask:"Ask about your pet...",clear:"Clear",thinking:"Thinking...",now:"VET NOW",err:"Something went wrong. Try again.",
-      conf:"Match",confnote:"This is pattern match — not medical certainty."},
-  ru:{hi:"Привет! Я PetAI 🐾",intro:"Спросите о здоровье, корме, уходе и товарах для питомца. Это <b>не диагноз</b> — только рекомендация.",
+      conf:"Match",confnote:"This is pattern match — not medical certainty.",
+      callvet:"🩺 Call a vet — Home Vet",u_urgent:"URGENT",u_routine:"ROUTINE",u_info:"INFO"},
+  ru:{hi:"Привет! Я PetAI 🐾",intro:"Спросите о здоровье, корме, уходе и товарах для питомца. PetAI <b>не ставит диагноз</b> — только рекомендации. При подозрении на экстренный случай не ждите — <b>сразу к ветеринару</b>.",
       ask:"Спросите о питомце...",clear:"Очистить",thinking:"Думаю...",now:"СРОЧНО К ВЕТУ",err:"Произошла ошибка. Попробуйте снова.",
-      conf:"Совпадение",confnote:"Это совпадение с шаблонами — не медицинская точность."},
+      conf:"Совпадение",confnote:"Это совпадение с шаблонами — не медицинская точность.",
+      callvet:"🩺 Вызвать ветеринара",u_urgent:"СРОЧНО",u_routine:"ПЛАНОВО",u_info:"ИНФО"},
 };
+// İki çıxış sinfi: təcili → "TƏCİLİ", qalanı planlı/məlumat (ehtimal dili yoxdur).
+function uLabel(u){return (u==="EMERGENCY"||u==="URGENT")?pai("u_urgent"):(u==="ROUTINE"?pai("u_routine"):pai("u_info"));}
+// PetAI-dan vet axınına keçid — vəziyyət mətni öncədən doldurulur.
+function petaiVet(i){const m=PETAI[i];VET.cond=(m&&m.q)||"";VET.step=1;VET.incoming={is_vet:false,requests:[]};go('vet');}
 const pai=k=>(PAI_T[LANG.get()]||PAI_T.az)[k];
 var PETAI=[];
 try{PETAI=JSON.parse(localStorage.getItem("petai_chat")||"[]");}catch(e){PETAI=[];}
 function petaiSave(){try{localStorage.setItem("petai_chat",JSON.stringify(PETAI.slice(-40)));}catch(e){}}
-function petaiBubble(m){
+function petaiBubble(m,idx){
   if(m.role==="u")
     return `<div style="display:flex;justify-content:flex-end;margin:6px 0">
       <div style="background:var(--brand);color:#fff;padding:9px 13px;border-radius:16px 16px 4px 16px;max-width:80%;font-size:14px">${esc(m.text)}</div></div>`;
   if(m.err)
-    return `<div style="display:flex;margin:6px 0"><div class="card" style="margin:0;max-width:85%;padding:10px 12px"><p class="err" style="margin:0">${esc(m.err)}</p></div></div>`;
+    // QAYDA 5: xəta halında belə vet yolu İŞLƏYİR — sistem çöksə də düymə var.
+    return `<div style="display:flex;margin:6px 0"><div class="card" style="margin:0;max-width:85%;padding:10px 12px">
+      <p class="err" style="margin:0">${esc(m.err)}</p>
+      <button class="btn" style="margin-top:8px" onclick="petaiVet(${idx})">${pai("callvet")}</button></div></div>`;
   const d=m.d;
   // Sponsorlu mehsullar teklif siyahisinda ONDE gelir (nisan gosterilmir —
   // sponsorluq yalniz mehsulun oz sehifesinde bilinir).
@@ -1466,10 +1555,11 @@ function petaiBubble(m){
   return `<div style="display:flex;margin:6px 0;gap:8px">
     <div style="flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);display:flex;align-items:center;justify-content:center;font-size:15px">🐾</div>
     <div class="card" style="margin:0;max-width:82%;padding:10px 12px">
-      <span class="pill u-${esc(d.urgency)}" style="font-size:11px">${esc(d.urgency)}${d.vet_now?" · "+pai("now"):""}</span>
+      <span class="pill u-${esc(d.urgency)}" style="font-size:11px">${uLabel(d.urgency)}${d.vet_now?" · "+pai("now"):""}</span>
       <p style="margin:8px 0 4px"><b>${esc(d.summary)}</b></p>
       <p style="margin:0">${esc(d.recommended_action)}</p>
       ${(d.red_flags||[]).length?`<p class="err" style="margin:6px 0 0">⚠ ${d.red_flags.map(esc).join(", ")}</p>`:""}
+      ${d.vet_now?`<button class="btn" style="margin-top:8px" onclick="petaiVet(${idx})">${pai("callvet")}</button>`:""}
       ${d.confidence?`<div style="margin-top:8px">
         <div class="muted" style="font-size:11px;display:flex;justify-content:space-between"><span>${pai("conf")}</span><span>${d.confidence}%</span></div>
         <div style="background:#f0e6d0;border-radius:6px;height:6px;overflow:hidden;margin-top:2px"><div style="width:${d.confidence}%;height:100%;background:${d.confidence>=70?'#2e8b57':(d.confidence>=45?'#F49B0D':'#c0392b')}"></div></div>
@@ -1503,10 +1593,67 @@ async function petaiSend(){
   el("chat").innerHTML=petaiChatHtml()+`<div style="display:flex;margin:6px 0;gap:8px"><div style="flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 32% 26%,#FFD979,#F49B0D 62%,#DE7F06);display:flex;align-items:center;justify-content:center;font-size:15px">🐾</div><p class="muted" style="margin:6px 0">${pai("thinking")}</p></div>`;
   window.scrollTo(0,document.body.scrollHeight);
   const r=await api("/triage/",{method:"POST",body:JSON.stringify({message:q,lang:LANG.get()})});
-  if(r.ok)PETAI.push({role:"a",d:r.data});
-  else PETAI.push({role:"a",err:r.data?.detail||pai("err")});
+  if(r.ok)PETAI.push({role:"a",d:r.data,q});
+  else PETAI.push({role:"a",err:r.data?.detail||pai("err"),q});
   petaiSave();
   const c=el("chat"); if(c){c.innerHTML=petaiChatHtml();window.scrollTo(0,document.body.scrollHeight);}
+}
+
+// ================= Satıcı: həftəlik hesabat (müqavilə §5.3) =================
+var STL={week:""};
+async function renderSettlement(r){
+  r.innerHTML=`<div class="top"><div class="brand"><button class="back" onclick="go('seller')">‹</button><span>📊 Həftəlik hesabat</span><span></span></div></div>
+    <div class="wrap"><div id="stl"><p class="muted">Yüklənir...</p></div></div>`;
+  const q=STL.week?`?week=${STL.week}`:"";
+  const res=await api(`/seller/settlement/${q}`);
+  if(!res.ok){el("stl").innerHTML=`<p class="err">${esc(res.data?.detail||"Xəta")}</p>`;return;}
+  const d=res.data,t=d.totals;
+  el("stl").innerHTML=`
+    <div class="card">
+      <div class="row"><b>Həftə</b><span>${esc(d.week_start)} — ${esc(d.week_end)}</span></div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn ghost" style="flex:1;padding:8px" onclick="stlShift(-7)">‹ Əvvəlki</button>
+        <button class="btn ghost" style="flex:1;padding:8px" onclick="stlShift(7)">Sonrakı ›</button>
+      </div>
+    </div>
+    <div class="card" style="background:#eefaf0;border-color:var(--ok)">
+      <div class="row"><span>Ümumi satış</span><b>${esc(t.gross_azn)}</b></div>
+      <div class="row muted"><span>Komissiya</span><span>−${esc(t.commission_azn)}</span></div>
+      <div class="row" style="font-size:17px;margin-top:4px"><b>Sənə ödəniləcək</b><b style="color:var(--ok)">${esc(t.net_azn)}</b></div>
+      <div class="muted" style="font-size:11px;margin-top:4px">Status: ${d.payout&&d.payout.status==="PAID"?"✅ Ödənilib":"⏳ Gözləyir"} · Çatdırılma haqqı bura daxil deyil (kuryerindir)</div>
+    </div>
+    ${(d.lines||[]).length?`<div class="card" style="padding:10px 12px">${d.lines.map(l=>`
+      <div style="border-bottom:1px dashed var(--line);padding:6px 0;font-size:13px">
+        <div class="row"><b>${esc(l.product)}</b><span>${(l.amount_qepik/100).toFixed(2)} ₼</span></div>
+        <div class="row muted" style="font-size:11px"><span>${esc(l.date)} · Sifariş #${l.order} · ${l.qty} əd.</span><span>komissiya ${l.rate}% = ${(l.commission_qepik/100).toFixed(2)} ₼</span></div>
+      </div>`).join("")}</div>`:`<div class="empty"><div class="big">📭</div><p>Bu həftə tamamlanmış sifariş yoxdur.</p></div>`}
+    <button class="btn ghost" onclick="stlCsv()">⬇ CSV yüklə (öz dəftərinlə tutuşdur)</button>
+    <div class="card" style="margin-top:10px">
+      <b style="font-size:13px">Hesabatla razı deyilsən?</b>
+      <textarea class="f" id="stlnote" rows="2" placeholder="Nəyin düz gəlmədiyini yaz (5 iş günü ərzində baxılır)"></textarea>
+      <div id="stlmsg"></div>
+      <button class="btn ghost" onclick="stlObject('${esc(d.week_start)}')">Etiraz göndər</button>
+    </div>`;
+  STL.week=d.week_start;
+}
+function stlShift(days){
+  const d=new Date(STL.week);d.setDate(d.getDate()+days);
+  STL.week=d.toISOString().slice(0,10);render();
+}
+async function stlCsv(){
+  const q=STL.week?`?week=${STL.week}&csv=1`:"?csv=1";
+  const r=await fetch(API+`/seller/settlement/${q}`,{headers:{Authorization:"Token "+T.get()}});
+  if(!r.ok){toast("CSV alına bilmədi");return;}
+  const blob=await r.blob();const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download=`hesabat-${STL.week||"hefte"}.csv`;a.click();
+  URL.revokeObjectURL(a.href);
+}
+async function stlObject(week){
+  const note=(el("stlnote").value||"").trim();
+  if(!note){el("stlmsg").innerHTML=`<p class="err">Qeyd yaz.</p>`;return;}
+  const r=await api("/seller/settlement/",{method:"POST",body:JSON.stringify({week,note})});
+  el("stlmsg").innerHTML=r.ok?`<p style="color:var(--ok)">✓ ${esc(r.data.detail)}</p>`
+                             :`<p class="err">${esc(r.data?.detail||"Xəta")}</p>`;
 }
 
 // ================= Başlanğıc =================
@@ -1531,6 +1678,7 @@ render=async function(){
   if(S.view==="addpet"){renderNav();return renderAddPet(el("root"));}
   if(S.view==="vet"){renderNav();return renderVet(el("root"));}
   if(S.view==="seller"){renderNav();return renderSeller(el("root"));}
+  if(S.view==="settlement"){renderNav();return renderSettlement(el("root"));}
   if(S.view==="addproduct"){renderNav();return renderAddProduct(el("root"));}
   if(S.view==="myproducts"){renderNav();return renderMyProducts(el("root"));}
   if(S.view==="sellerorders"){renderNav();return renderSellerOrders(el("root"));}
