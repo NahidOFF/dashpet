@@ -822,7 +822,7 @@ function showPay(sub){
   el("paybox").innerHTML=`
     <div style="margin-top:12px;border-top:1px dashed var(--line);padding-top:10px">
       <label>Çatdırılma ünvanı</label>
-      <input class="f" id="caddr" placeholder="Məs: Bakı, Nəsimi r., Azadlıq pr. 12, m. 45" value="${esc(ADDR.get())}" oninput="updatePaySummary(${sub})">
+      <input class="f" id="caddr" maxlength="255" placeholder="Məs: Bakı, Nəsimi r., Azadlıq pr. 12, m. 45" value="${esc(ADDR.get())}" oninput="updatePaySummary(${sub})">
       <label>Ödəniş üsulu</label>
       <div style="display:flex;gap:8px;margin:6px 0 4px">
         <div style="flex:1;border:2px solid var(--brand);border-radius:12px;padding:10px;text-align:center;background:#fff7e6">
@@ -1393,7 +1393,7 @@ async function renderVet(r){
         <p class="muted" style="margin:0 0 8px">Təsvir et — vəziyyətə uyğun vetləri göstərək. Bu, diaqnoz deyil.</p>
         ${S.pets&&S.pets.length?`<label>Hansı heyvan?</label>
           <select class="f" id="vpet"><option value="">Seçilməyib</option>${S.pets.map(p=>`<option value="${p.id}">${petEmoji(p.species)} ${esc(p.name)}</option>`).join("")}</select>`:""}
-        <textarea class="f" id="vcond" rows="3" placeholder="Məs: pişiyim səhərdən qusur, halsızdır...">${esc(VET.cond)}</textarea>
+        <textarea class="f" id="vcond" rows="3" maxlength="2000" placeholder="Məs: pişiyim səhərdən qusur, halsızdır...">${esc(VET.cond)}</textarea>
         <div id="vmsg"></div>
         <button class="btn" onclick="vetStep2()">Davam ›</button>
       </div></div>`;
@@ -1581,7 +1581,7 @@ async function renderTriageView(r){
     <button class="alink" style="padding:0" onclick="PETAI=[];petaiSave();render()">${pai("clear")}</button></div></div>
   <div id="chat" style="padding:12px 12px 8px">${petaiChatHtml()}</div>
   <div style="position:fixed;bottom:66px;left:0;right:0;max-width:520px;margin:0 auto;background:#fff;border-top:1px solid var(--line);padding:8px 10px;display:flex;gap:8px;z-index:25">
-    <input class="f" id="tq" style="margin:0" placeholder="${pai("ask")}" onkeydown="if(event.key==='Enter')petaiSend()">
+    <input class="f" id="tq" maxlength="1500" style="margin:0" placeholder="${pai("ask")}" onkeydown="if(event.key==='Enter')petaiSend()">
     <button class="btn" style="width:auto;padding:0 18px" onclick="petaiSend()">➤</button>
   </div><div style="height:70px"></div>`;
   window.scrollTo(0,document.body.scrollHeight);
