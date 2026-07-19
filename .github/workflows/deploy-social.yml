@@ -1,0 +1,42 @@
+# Sosial media sistemi üçün deploy: statik sayt (slaydlar) + petekh-social Worker.
+# İşə düşmə: main-ə push (social/ və ya social-worker/ dəyişəndə) və ya əl ilə (workflow_dispatch).
+# Tələb olunan Actions secrets: CLOUDFLARE_API_TOKEN, ZERNIO_API_KEYS, RUN_TOKEN
+name: Deploy social
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "social/**"
+      - "social-worker/**"
+      - ".github/workflows/deploy-social.yml"
+
+jobs:
+  deploy-site:
+    name: Saytı deploy et (slaydlar + content.json)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 5a66ed249c33972f5b878b14a850da07
+
+  deploy-worker:
+    name: petekh-social Worker-i deploy et
+    runs-on: ubuntu-latest
+    needs: deploy-site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 5a66ed249c33972f5b878b14a850da07
+          workingDirectory: social-worker
+          secrets: |
+            ZERNIO_API_KEYS
+            RUN_TOKEN
+        env:
+          ZERNIO_API_KEYS: ${{ secrets.ZERNIO_API_KEYS }}
+          RUN_TOKEN: ${{ secrets.RUN_TOKEN }}
