@@ -1,0 +1,13 @@
+# Əl ilə işə salınan bir-dəfəlik test: hər TikTok hesabına 1 slideshow postu.
+name: Social post once (test)
+on:
+  workflow_dispatch:
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hər hesaba 1 test slideshow postu
+        env:
+          ZERNIO_API_KEYS: ${{ secrets.ZERNIO_API_KEYS }}
+        run: node social-worker/post-once.mjs
