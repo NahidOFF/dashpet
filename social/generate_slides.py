@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Petekh TikTok slayd hovuzu generatoru (v2 — TikTok təhlükəsiz zona).
+"""Petekh TikTok slayd hovuzu generatoru (v3 — pre-launch teaser + follow).
 
-TikTok 9:16 şəkli hündür ekranlara doldurub kənarları kəsir, alt hissəni isə
-caption örtür. Ona görə bütün məzmun mərkəzi təhlükəsiz zonada yerləşdirilir:
-üfüqi ~620px mərkəz zolağı, şaquli y=300..1360. Yazılar kiçik və mərkəzləşmiş.
+Petekh hələ açılmayıb (avqustda gözlənilir), ona görə mesajlar "indi sifariş et"
+deyil, "avqustda gəlir — izlə" teaser üslubundadır. Hər slaydın altında incə,
+ardıcıl "+ İzlə" çipi var (səbəb: açılışı qaçırmamaq); sonuncu (CTA) slaydda
+güclü follow çağırışı.
 
-İşlətmək:
-    python3 social/generate_slides.py [--shot path/to/screenshot.png ...]
-Nəticə: social/slides/*.png (1080x1920)
+TikTok təhlükəsiz zona: mətn/loqo mərkəzi ~620px zolaqda, şaquli y=300..1300;
+alt caption zonasına və kəsilən kənarlara heç nə düşmür.
+
+    python3 social/generate_slides.py [--shot ekran.png ...]
 """
 import argparse
 import math
@@ -21,8 +23,7 @@ OUT = os.path.join(ROOT, "social", "slides")
 LOGO = os.path.join(ROOT, "logo-mark-t.png")
 
 W, H = 1080, 1920
-TEXT_MAX_W = 620          # üfüqi təhlükəsiz mətn eni
-SAFE_TOP, SAFE_BOTTOM = 300, 1360
+TEXT_MAX_W = 620
 
 CREAM = (255, 247, 230)
 ORANGE = (244, 155, 13)
@@ -35,17 +36,19 @@ WHITE = (255, 255, 255)
 F_SERIF = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
 F_SANS = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
+# Teaser hook-lar (açılış avqustda) — birinci slayd
 HOOKS = [
-    ("Ev heyvanın üçün hər şey — Petekh", "Sifariş et, qapına gəlsin"),
-    ("Pişiyin yemi bitib?", "5 dəqiqəyə sifariş et"),
-    ("Zoomağazaya getməyə vaxt yoxdur?", "Petekh sənin yerinə gedər"),
-    ("Bütün zoomağazalar bir tətbiqdə", "Qiymətləri müqayisə et"),
-    ("Qidadan oyuncağa — hər şey burada", "Petekh ilə asan"),
-    ("Sevimli dostun ac qalmasın", "Sürətli çatdırılma"),
-    ("Ən sərfəli qiymətlər", "Müqayisə et, qazan"),
-    ("İtinin sevimli yemi endirimlə", "Yalnız Petekh-də"),
+    ("Ev heyvanın üçün hər şey — bir tətbiqdə", "Petekh avqustda gəlir"),
+    ("Pişiyin yemi bitəndə panika?", "Tezliklə buna son"),
+    ("Zoomağazaya getməyə vaxt yoxdur?", "Avqustdan Petekh sənin yerinə gedəcək"),
+    ("Bütün zoomağazalar bir tətbiqdə", "Tezliklə — Petekh"),
+    ("Qidadan oyuncağa hər şey", "Bir ünvanda, avqustda"),
+    ("Bakıda pet alış-verişi dəyişir", "Petekh yolda"),
+    ("Ən sərfəli qiymətləri müqayisə et", "Açılış avqustda"),
+    ("Sevimli dostun üçün böyük yenilik", "Az qalıb"),
 ]
 
+# Dəyər vədləri (nə gətiririk) — orta slaydlar
 FEATURES = [
     ("Çoxmağazalı seçim", "Bir səbətdə ən yaxşı qiymət"),
     ("Qapına çatdırılma", "Evdən çıxmadan sifariş"),
@@ -57,16 +60,17 @@ FEATURES = [
     ("Yerli mağazaları dəstəklə", "Şəhərindəki zoomağazalar"),
 ]
 
+# CTA (son slayd) — güclü follow çağırışı
 CTAS = [
-    ("Petekh-i sına", "petekh.com"),
-    ("İndi qeydiyyatdan keç", "petekh.com"),
-    ("Sevimli dostun üçün ən yaxşısı", "petekh.com"),
+    ("Açılışı qaçırma", "İzlə — avqustda xəbər ver"),
+    ("İlk sınayanlardan ol", "İzlə, açılışdan xəbərdar ol"),
+    ("Böyük gün yaxınlaşır", "İzlə — Petekh avqustda"),
 ]
 
 SHOT_OVERLAYS = [
-    "Sadə və sürətli",
-    "Bir dəqiqəyə başla",
+    "Belə görünəcək",
     "Cibindəki zoomağaza",
+    "Avqustda səndə",
 ]
 
 
@@ -92,7 +96,6 @@ _PAW_SPRITE = None
 
 
 def _paw_sprite():
-    """Loqonun mərkəzindəki əsl it pəncəsini sprite kimi çıxarır."""
     global _PAW_SPRITE
     if _PAW_SPRITE is None:
         logo = Image.open(LOGO).convert("RGBA")
@@ -153,12 +156,23 @@ def center_block(d, y, text, font, fill, line_h, max_w=TEXT_MAX_W):
     return y
 
 
-def pill(img, y=1265, text="petekh.com"):
+def follow_chip(img, y=1230, subtext="petekh.com · avqustda"):
+    """Hər slaydın altında incə, ardıcıl follow çağırışı."""
     d = ImageDraw.Draw(img)
-    f = ImageFont.truetype(F_SANS, 32)
-    pw, ph = 330, 74
-    d.rounded_rectangle([(W - pw) // 2, y, (W + pw) // 2, y + ph], radius=37, fill=WHITE)
-    center(d, y + 19, text, f, ORANGE_DARK)
+    f = ImageFont.truetype(F_SANS, 34)
+    label = "+ İzlə"
+    tw = d.textlength(label, font=f)
+    pw, ph = int(tw) + 96, 76
+    x0 = (W - pw) // 2
+    # kölgə
+    sh = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    ImageDraw.Draw(sh).rounded_rectangle([x0, y + 4, x0 + pw, y + ph + 4], radius=ph // 2, fill=(40, 44, 60, 90))
+    img.paste(Image.alpha_composite(img.convert("RGBA"), sh.filter(ImageFilter.GaussianBlur(8))).convert("RGB"), (0, 0))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([x0, y, x0 + pw, y + ph], radius=ph // 2, fill=NAVY)
+    d.text(((W - tw) / 2, y + 18), label, font=f, fill=WHITE)
+    fs = ImageFont.truetype(F_SANS, 26)
+    center(d, y + ph + 14, subtext, fs, ORANGE_DARK)
 
 
 def base(scheme):
@@ -175,71 +189,79 @@ def base(scheme):
 def hero_slide(headline, sub, scheme):
     img, head_c, sub_c = base(scheme)
     d = ImageDraw.Draw(img)
-    lc = logo_card(150, 34)
-    img.paste(lc, ((W - 150) // 2, 330), lc)
-    f_h = ImageFont.truetype(F_SERIF, 58)
-    f_s = ImageFont.truetype(F_SANS, 36)
-    y = center_block(d, 570, headline, f_h, head_c, 76)
-    p = paw(84, head_c)
-    img.paste(p, ((W - 84) // 2, y + 42), p)
-    center_block(d, y + 168, sub, f_s, sub_c, 48)
-    pill(img)
+    lc = logo_card(146, 34)
+    img.paste(lc, ((W - 146) // 2, 315), lc)
+    f_h = ImageFont.truetype(F_SERIF, 56)
+    f_s = ImageFont.truetype(F_SANS, 34)
+    y = center_block(d, 540, headline, f_h, head_c, 72)
+    p = paw(76, head_c)
+    img.paste(p, ((W - 76) // 2, y + 34), p)
+    center_block(d, y + 150, sub, f_s, sub_c, 46)
+    follow_chip(img)
     return img
 
 
 def feature_slide(title, sub, scheme):
     img, head_c, sub_c = base(scheme)
     d = ImageDraw.Draw(img)
-    lc = logo_card(140, 32)
-    img.paste(lc, ((W - 140) // 2, 320), lc)
-    cx0, cy0, cx1, cy1 = 210, 520, 870, 1180
-    d.rounded_rectangle([cx0, cy0, cx1, cy1], radius=48, fill=WHITE)
-    p = paw(120, ORANGE)
-    img.paste(p, ((W - 120) // 2, cy0 + 70), p)
+    lc = logo_card(132, 30)
+    img.paste(lc, ((W - 132) // 2, 315), lc)
+    cx0, cy0, cx1, cy1 = 220, 500, 860, 1120
+    d.rounded_rectangle([cx0, cy0, cx1, cy1], radius=46, fill=WHITE)
+    p = paw(112, ORANGE)
+    img.paste(p, ((W - 112) // 2, cy0 + 62), p)
     f_t = ImageFont.truetype(F_SANS, 44)
     f_s = ImageFont.truetype(F_SANS, 32)
-    y = center_block(d, cy0 + 250, title, f_t, NAVY, 58, max_w=560)
-    center_block(d, y + 26, sub, f_s, ORANGE_DARK, 42, max_w=560)
-    pill(img)
+    y = center_block(d, cy0 + 234, title, f_t, NAVY, 56, max_w=560)
+    center_block(d, y + 22, sub, f_s, ORANGE_DARK, 42, max_w=560)
+    follow_chip(img)
     return img
 
 
 def shot_slide(shot_path, headline, scheme):
     img, head_c, _ = base(scheme)
     d = ImageDraw.Draw(img)
-    f_h = ImageFont.truetype(F_SERIF, 46)
-    y = center_block(d, 320, headline, f_h, head_c, 60)
+    f_h = ImageFont.truetype(F_SERIF, 44)
+    center_block(d, 315, headline, f_h, head_c, 58)
     shot = Image.open(shot_path).convert("RGB")
-    ph_w = 380
-    ph_h = min(int(ph_w * shot.height / shot.width), 830)
-    inner = shot.resize((ph_w - 28, ph_h - 28))
+    ph_w = 360
+    ph_h = min(int(ph_w * shot.height / shot.width), 720)
+    inner = shot.resize((ph_w - 26, ph_h - 26))
     mask = Image.new("L", inner.size, 0)
-    ImageDraw.Draw(mask).rounded_rectangle([0, 0, inner.width - 1, inner.height - 1], radius=34, fill=255)
-    frame = Image.new("RGBA", (ph_w + 36, ph_h + 36), (0, 0, 0, 0))
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, inner.width - 1, inner.height - 1], radius=32, fill=255)
+    frame = Image.new("RGBA", (ph_w + 34, ph_h + 34), (0, 0, 0, 0))
     fd = ImageDraw.Draw(frame)
     sh = Image.new("RGBA", frame.size, (0, 0, 0, 0))
-    ImageDraw.Draw(sh).rounded_rectangle([26, 32, ph_w + 6, ph_h + 16], radius=48, fill=(60, 30, 0, 110))
-    frame.alpha_composite(sh.filter(ImageFilter.GaussianBlur(14)))
-    fd.rounded_rectangle([16, 16, ph_w + 15, ph_h + 15], radius=44, fill=NAVY)
-    frame.paste(inner, (30, 30), mask)
-    fd.rounded_rectangle([ph_w // 2 - 46, 21, ph_w // 2 + 62, 33], radius=6, fill=(20, 22, 30))
-    img.paste(frame, ((W - frame.width) // 2, max(y + 40, 450)), frame)
+    ImageDraw.Draw(sh).rounded_rectangle([24, 30, ph_w + 6, ph_h + 14], radius=44, fill=(60, 30, 0, 110))
+    frame.alpha_composite(sh.filter(ImageFilter.GaussianBlur(13)))
+    fd.rounded_rectangle([15, 15, ph_w + 14, ph_h + 14], radius=42, fill=NAVY)
+    frame.paste(inner, (28, 28), mask)
+    fd.rounded_rectangle([ph_w // 2 - 44, 20, ph_w // 2 + 58, 31], radius=6, fill=(20, 22, 30))
+    img.paste(frame, ((W - frame.width) // 2, 440), frame)
+    follow_chip(img)
     return img
 
 
-def cta_slide(title, url, scheme):
+def cta_slide(title, follow_line, scheme):
+    """Son slayd — güclü follow çağırışı əsas mesajdır."""
     img, head_c, sub_c = base(scheme)
     d = ImageDraw.Draw(img)
-    lc = logo_card(190, 44)
-    img.paste(lc, ((W - 190) // 2, 420), lc)
-    f_h = ImageFont.truetype(F_SERIF, 56)
-    f_u = ImageFont.truetype(F_SANS, 46)
-    y = center_block(d, 720, title, f_h, head_c, 74, max_w=600)
-    bw, bh = 460, 104
-    d.rounded_rectangle([(W - bw) // 2, y + 56, (W + bw) // 2, y + 56 + bh], radius=52, fill=NAVY)
-    center(d, y + 56 + 27, url, f_u, WHITE)
-    p = paw(84, head_c)
-    img.paste(p, ((W - 84) // 2, y + 56 + bh + 60), p)
+    lc = logo_card(176, 40)
+    img.paste(lc, ((W - 176) // 2, 380), lc)
+    f_h = ImageFont.truetype(F_SERIF, 58)
+    y = center_block(d, 640, title, f_h, head_c, 76, max_w=600)
+    # böyük follow düyməsi
+    f_b = ImageFont.truetype(F_SANS, 48)
+    label = "+ İzlə"
+    tw = d.textlength(label, font=f_b)
+    bw, bh = int(tw) + 150, 116
+    bx, by = (W - bw) // 2, y + 44
+    d.rounded_rectangle([bx, by, bx + bw, by + bh], radius=bh // 2, fill=NAVY)
+    d.text(((W - tw) / 2, by + 30), label, font=f_b, fill=WHITE)
+    f_r = ImageFont.truetype(F_SANS, 34)
+    center_block(d, by + bh + 34, follow_line, f_r, sub_c, 46, max_w=620)
+    f_u = ImageFont.truetype(F_SANS, 30)
+    center(d, 1250, "petekh.com · avqustda", f_u, ORANGE_DARK)
     return img
 
 
@@ -262,9 +284,9 @@ def main():
         feature_slide(t, s, "orange" if i % 2 == 0 else "cream").save(os.path.join(OUT, name), optimize=True)
         made.append(name)
 
-    for i, (t, u) in enumerate(CTAS):
+    for i, (t, fl) in enumerate(CTAS):
         name = f"cta-{i:02d}.png"
-        cta_slide(t, u, "orange" if i % 2 == 0 else "cream").save(os.path.join(OUT, name), optimize=True)
+        cta_slide(t, fl, "orange" if i % 2 == 0 else "cream").save(os.path.join(OUT, name), optimize=True)
         made.append(name)
 
     for si, shot in enumerate(args.shot):
