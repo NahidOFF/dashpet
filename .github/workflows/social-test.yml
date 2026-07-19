@@ -1,0 +1,12 @@
+# petekh-social Worker-in quru sınağı: heç nə postlamır, günün planını göstərir.
+name: Social dry-run test
+on:
+  workflow_dispatch:
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Worker dry-run çağırışı
+        run: |
+          curl -sS --fail-with-body "https://petekh-social.qnahid0987.workers.dev/run?dry=1" -o out.json -w "HTTP %{http_code}\n" || true
+          python3 -m json.tool out.json || cat out.json
