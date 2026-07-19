@@ -22,6 +22,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: 5a66ed249c33972f5b878b14a850da07
+          wranglerVersion: "4"
 
   deploy-worker:
     name: petekh-social Worker-i deploy et
@@ -33,6 +34,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: 5a66ed249c33972f5b878b14a850da07
+          wranglerVersion: "4"
           workingDirectory: social-worker
           secrets: |
             ZERNIO_API_KEYS
