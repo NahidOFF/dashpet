@@ -18,7 +18,7 @@ for (const key of keys) {
   if (!res.ok) { console.log(`XETA accounts: ${res.status}`); fails++; continue; }
   const accounts = (await res.json()).accounts.filter(a => a.platform === "tiktok" && a.isActive && !a.needsReconnection);
   for (const acc of accounts) {
-    const r = rng32(fnv(`${new Date().toISOString().slice(0, 10)}|test|${acc._id}`));
+    const r = rng32(fnv(`${Date.now()}|test|${Math.random()}|${acc._id}`));
     const s = content.slides, base = `${SITE}${content.slideBase}`;
     const files = [pick(r, s.hooks), ...shuffle(r, [...s.features, ...s.shots]).slice(0, 4), pick(r, s.ctas)];
     const body = {
