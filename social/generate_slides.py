@@ -224,26 +224,26 @@ def feature_slide(title, sub, scheme):
 def shot_slide(shot_path, caption, scheme):
     img, head_c, _ = base(scheme)
     d = ImageDraw.Draw(img)
-    f_h = ImageFont.truetype(F_SERIF, 50)
-    center_block(d, 430, caption, f_h, head_c, 64)
+    f_h = ImageFont.truetype(F_SERIF, 48)
+    center_block(d, 210, caption, f_h, head_c, 60)
 
+    # Dik (portret) telefon, tam boy — kəsmə yoxdur, böyük göstərilir
     shot = Image.open(shot_path).convert("RGB")
-    shot = shot.crop((0, 0, shot.width, int(shot.height * SHOT_CROP)))  # yuxarı hissə
-    ph_w = 660                                                          # BÖYÜK telefon
+    ph_w = 570
     ph_h = int(ph_w * shot.height / shot.width)
     inner = shot.resize((ph_w - 30, ph_h - 30))
     mask = Image.new("L", inner.size, 0)
-    ImageDraw.Draw(mask).rounded_rectangle([0, 0, inner.width - 1, inner.height - 1], radius=34, fill=255)
-    frame = Image.new("RGBA", (ph_w + 40, ph_h + 44), (0, 0, 0, 0))
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, inner.width - 1, inner.height - 1], radius=44, fill=255)
+    frame = Image.new("RGBA", (ph_w + 40, ph_h + 40), (0, 0, 0, 0))
     fd = ImageDraw.Draw(frame)
     sh = Image.new("RGBA", frame.size, (0, 0, 0, 0))
-    ImageDraw.Draw(sh).rounded_rectangle([28, 36, ph_w + 8, ph_h + 20], radius=48, fill=(60, 30, 0, 120))
+    ImageDraw.Draw(sh).rounded_rectangle([28, 34, ph_w + 8, ph_h + 18], radius=58, fill=(60, 30, 0, 120))
     frame.alpha_composite(sh.filter(ImageFilter.GaussianBlur(16)))
-    fd.rounded_rectangle([16, 16, ph_w + 15, ph_h + 27], radius=46, fill=NAVY)   # gövdə (aşağıda az uzun)
+    fd.rounded_rectangle([16, 16, ph_w + 23, ph_h + 23], radius=56, fill=NAVY)   # telefon gövdəsi
     frame.paste(inner, (30, 30), mask)
-    fd.rounded_rectangle([ph_w // 2 - 54, 22, ph_w // 2 + 66, 34], radius=7, fill=(20, 22, 30))  # notch
-    img.paste(frame, ((W - frame.width) // 2, 660), frame)
-    follow_chip(img, y=1610)
+    fd.rounded_rectangle([ph_w // 2 - 50, 22, ph_w // 2 + 70, 35], radius=7, fill=(20, 22, 30))  # notch
+    img.paste(frame, ((W - frame.width) // 2, 330), frame)
+    follow_chip(img, y=1620)
     return img
 
 
