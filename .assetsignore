@@ -1,0 +1,7 @@
+.git
+.github
+.claude
+node_modules
+social-worker
+package.json
+package-lock.json
