@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Petekh TikTok slayd hovuzu generatoru (v3 — pre-launch teaser + follow).
+"""Petekh TikTok slayd generatoru (v5 — tam ekran 9:19.5 + böyük telefon).
 
-Petekh hələ açılmayıb (avqustda gözlənilir), ona görə mesajlar "indi sifariş et"
-deyil, "avqustda gəlir — izlə" teaser üslubundadır. Hər slaydın altında incə,
-ardıcıl "+ İzlə" çipi var (səbəb: açılışı qaçırmamaq); sonuncu (CTA) slaydda
-güclü follow çağırışı.
-
-TikTok təhlükəsiz zona: mətn/loqo mərkəzi ~620px zolaqda, şaquli y=300..1300;
-alt caption zonasına və kəsilən kənarlara heç nə düşmür.
+Dəyişikliklər (istifadəçi geri-bildirişi):
+- Kətan 1080x2340 (9:19.5) — müasir telefonları tam doldurur, TikTok-un qara
+  letterbox zolağı olmur.
+- Şəkil (real app ekranı) telefon çərçivəsində xeyli böyüdülüb; ekran görüntüsü
+  yuxarı hissəyə görə kəsilir ki, çərçivə enli və oxunaqlı olsun.
+- Bütün mətn/loqo mərkəzi 640px zolaqda, şaquli təhlükəsiz aralıqda (330..1760);
+  alt ~25% TikTok caption/düymələri üçün boş saxlanılır.
 
     python3 social/generate_slides.py [--shot ekran.png ...]
 """
@@ -22,8 +22,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "social", "slides")
 LOGO = os.path.join(ROOT, "logo-mark-t.png")
 
-W, H = 1080, 1920
-TEXT_MAX_W = 620
+W, H = 1080, 2340
+TEXT_MAX_W = 660
 
 CREAM = (255, 247, 230)
 ORANGE = (244, 155, 13)
@@ -36,7 +36,6 @@ WHITE = (255, 255, 255)
 F_SERIF = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
 F_SANS = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
-# Teaser hook-lar (açılış avqustda) — birinci slayd
 HOOKS = [
     ("Ev heyvanın üçün hər şey — bir tətbiqdə", "Petekh avqustda gəlir"),
     ("Pişiyin yemi bitəndə panika?", "Tezliklə buna son"),
@@ -48,7 +47,6 @@ HOOKS = [
     ("Sevimli dostun üçün böyük yenilik", "Az qalıb"),
 ]
 
-# Dəyər vədləri (nə gətiririk) — orta slaydlar
 FEATURES = [
     ("Çoxmağazalı seçim", "Bir səbətdə ən yaxşı qiymət"),
     ("Qapına çatdırılma", "Evdən çıxmadan sifariş"),
@@ -60,7 +58,6 @@ FEATURES = [
     ("Yerli mağazaları dəstəklə", "Şəhərindəki zoomağazalar"),
 ]
 
-# CTA (son slayd) — güclü follow çağırışı
 CTAS = [
     ("Açılışı qaçırma", "İzlə — avqustda xəbər ver"),
     ("İlk sınayanlardan ol", "İzlə, açılışdan xəbərdar ol"),
@@ -77,6 +74,9 @@ SHOT_CAPTIONS = {
     "10-petai": "PetAI — ağıllı köməkçin",
 }
 
+# Ekran görüntüsünün yuxarıdan neçə faizi göstərilsin (telefon enli görünsün)
+SHOT_CROP = 0.60
+
 
 def gradient(img, top, bottom):
     d = ImageDraw.Draw(img)
@@ -91,7 +91,8 @@ def hexagons(img, color=(255, 255, 255, 70)):
                  cy + r * math.sin(math.radians(60 * i - 30))) for i in range(6)]
     layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
-    for cx, cy, r in [(90, 380, 110), (1000, 300, 140), (70, 1560, 130), (1010, 1460, 120)]:
+    for cx, cy, r in [(90, 440, 120), (1000, 340, 150), (70, 1960, 140),
+                      (1010, 1820, 130), (120, 2180, 110)]:
         d.polygon(hx(cx, cy, r), outline=color, width=9)
     img.paste(layer, (0, 0), layer)
 
@@ -126,7 +127,7 @@ def paw(size, color):
     return layer
 
 
-def logo_card(size=150, radius=34):
+def logo_card(size=160, radius=36):
     logo = Image.open(LOGO).convert("RGBA")
     logo.thumbnail((int(size * 0.74), int(size * 0.74)))
     card = Image.new("RGBA", (size, size), (0, 0, 0, 0))
@@ -160,23 +161,21 @@ def center_block(d, y, text, font, fill, line_h, max_w=TEXT_MAX_W):
     return y
 
 
-def follow_chip(img, y=1230, subtext="petekh.com · avqustda"):
-    """Hər slaydın altında incə, ardıcıl follow çağırışı."""
+def follow_chip(img, y=1560, subtext="petekh.com · avqustda"):
     d = ImageDraw.Draw(img)
-    f = ImageFont.truetype(F_SANS, 34)
+    f = ImageFont.truetype(F_SANS, 36)
     label = "+ İzlə"
     tw = d.textlength(label, font=f)
-    pw, ph = int(tw) + 96, 76
+    pw, ph = int(tw) + 104, 82
     x0 = (W - pw) // 2
-    # kölgə
     sh = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    ImageDraw.Draw(sh).rounded_rectangle([x0, y + 4, x0 + pw, y + ph + 4], radius=ph // 2, fill=(40, 44, 60, 90))
-    img.paste(Image.alpha_composite(img.convert("RGBA"), sh.filter(ImageFilter.GaussianBlur(8))).convert("RGB"), (0, 0))
+    ImageDraw.Draw(sh).rounded_rectangle([x0, y + 5, x0 + pw, y + ph + 5], radius=ph // 2, fill=(40, 44, 60, 90))
+    img.paste(Image.alpha_composite(img.convert("RGBA"), sh.filter(ImageFilter.GaussianBlur(9))).convert("RGB"), (0, 0))
     d = ImageDraw.Draw(img)
     d.rounded_rectangle([x0, y, x0 + pw, y + ph], radius=ph // 2, fill=NAVY)
-    d.text(((W - tw) / 2, y + 18), label, font=f, fill=WHITE)
-    fs = ImageFont.truetype(F_SANS, 26)
-    center(d, y + ph + 14, subtext, fs, ORANGE_DARK)
+    d.text(((W - tw) / 2, y + 20), label, font=f, fill=WHITE)
+    fs = ImageFont.truetype(F_SANS, 28)
+    center(d, y + ph + 16, subtext, fs, ORANGE_DARK)
 
 
 def base(scheme):
@@ -193,79 +192,79 @@ def base(scheme):
 def hero_slide(headline, sub, scheme):
     img, head_c, sub_c = base(scheme)
     d = ImageDraw.Draw(img)
-    lc = logo_card(146, 34)
-    img.paste(lc, ((W - 146) // 2, 315), lc)
-    f_h = ImageFont.truetype(F_SERIF, 56)
-    f_s = ImageFont.truetype(F_SANS, 34)
-    y = center_block(d, 540, headline, f_h, head_c, 72)
-    p = paw(76, head_c)
-    img.paste(p, ((W - 76) // 2, y + 34), p)
-    center_block(d, y + 150, sub, f_s, sub_c, 46)
-    follow_chip(img)
+    lc = logo_card(168, 38)
+    img.paste(lc, ((W - 168) // 2, 620), lc)
+    f_h = ImageFont.truetype(F_SERIF, 64)
+    f_s = ImageFont.truetype(F_SANS, 38)
+    y = center_block(d, 920, headline, f_h, head_c, 84)
+    p = paw(88, head_c)
+    img.paste(p, ((W - 88) // 2, y + 46), p)
+    y2 = center_block(d, y + 184, sub, f_s, sub_c, 52)
+    follow_chip(img, y=y2 + 150)
     return img
 
 
 def feature_slide(title, sub, scheme):
     img, head_c, sub_c = base(scheme)
     d = ImageDraw.Draw(img)
-    lc = logo_card(132, 30)
-    img.paste(lc, ((W - 132) // 2, 315), lc)
-    cx0, cy0, cx1, cy1 = 220, 500, 860, 1120
-    d.rounded_rectangle([cx0, cy0, cx1, cy1], radius=46, fill=WHITE)
-    p = paw(112, ORANGE)
-    img.paste(p, ((W - 112) // 2, cy0 + 62), p)
-    f_t = ImageFont.truetype(F_SANS, 44)
-    f_s = ImageFont.truetype(F_SANS, 32)
-    y = center_block(d, cy0 + 234, title, f_t, NAVY, 56, max_w=560)
-    center_block(d, y + 22, sub, f_s, ORANGE_DARK, 42, max_w=560)
-    follow_chip(img)
+    lc = logo_card(150, 34)
+    img.paste(lc, ((W - 150) // 2, 560), lc)
+    cx0, cy0, cx1, cy1 = 190, 810, 890, 1530
+    d.rounded_rectangle([cx0, cy0, cx1, cy1], radius=52, fill=WHITE)
+    p = paw(126, ORANGE)
+    img.paste(p, ((W - 126) // 2, cy0 + 74), p)
+    f_t = ImageFont.truetype(F_SANS, 50)
+    f_s = ImageFont.truetype(F_SANS, 36)
+    y = center_block(d, cy0 + 270, title, f_t, NAVY, 64, max_w=600)
+    center_block(d, y + 26, sub, f_s, ORANGE_DARK, 48, max_w=600)
+    follow_chip(img, y=1650)
     return img
 
 
 def shot_slide(shot_path, caption, scheme):
     img, head_c, _ = base(scheme)
     d = ImageDraw.Draw(img)
-    f_h = ImageFont.truetype(F_SERIF, 44)
-    center_block(d, 312, caption, f_h, head_c, 56)
+    f_h = ImageFont.truetype(F_SERIF, 48)
+    center_block(d, 210, caption, f_h, head_c, 60)
+
+    # Dik (portret) telefon, tam boy — kəsmə yoxdur, böyük göstərilir
     shot = Image.open(shot_path).convert("RGB")
-    ph_w = 322                                     # aspect qorunur — əyilmə yoxdur
+    ph_w = 570
     ph_h = int(ph_w * shot.height / shot.width)
-    inner = shot.resize((ph_w - 24, ph_h - 24))
+    inner = shot.resize((ph_w - 30, ph_h - 30))
     mask = Image.new("L", inner.size, 0)
-    ImageDraw.Draw(mask).rounded_rectangle([0, 0, inner.width - 1, inner.height - 1], radius=30, fill=255)
-    frame = Image.new("RGBA", (ph_w + 32, ph_h + 32), (0, 0, 0, 0))
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, inner.width - 1, inner.height - 1], radius=44, fill=255)
+    frame = Image.new("RGBA", (ph_w + 40, ph_h + 40), (0, 0, 0, 0))
     fd = ImageDraw.Draw(frame)
     sh = Image.new("RGBA", frame.size, (0, 0, 0, 0))
-    ImageDraw.Draw(sh).rounded_rectangle([22, 28, ph_w + 6, ph_h + 12], radius=42, fill=(60, 30, 0, 110))
-    frame.alpha_composite(sh.filter(ImageFilter.GaussianBlur(12)))
-    fd.rounded_rectangle([14, 14, ph_w + 13, ph_h + 13], radius=40, fill=NAVY)
-    frame.paste(inner, (26, 26), mask)
-    fd.rounded_rectangle([ph_w // 2 - 42, 19, ph_w // 2 + 54, 29], radius=6, fill=(20, 22, 30))
-    img.paste(frame, ((W - frame.width) // 2, 420), frame)
-    follow_chip(img, y=1235)
+    ImageDraw.Draw(sh).rounded_rectangle([28, 34, ph_w + 8, ph_h + 18], radius=58, fill=(60, 30, 0, 120))
+    frame.alpha_composite(sh.filter(ImageFilter.GaussianBlur(16)))
+    fd.rounded_rectangle([16, 16, ph_w + 23, ph_h + 23], radius=56, fill=NAVY)   # telefon gövdəsi
+    frame.paste(inner, (30, 30), mask)
+    fd.rounded_rectangle([ph_w // 2 - 50, 22, ph_w // 2 + 70, 35], radius=7, fill=(20, 22, 30))  # notch
+    img.paste(frame, ((W - frame.width) // 2, 330), frame)
+    follow_chip(img, y=1620)
     return img
 
 
 def cta_slide(title, follow_line, scheme):
-    """Son slayd — güclü follow çağırışı əsas mesajdır."""
     img, head_c, sub_c = base(scheme)
     d = ImageDraw.Draw(img)
-    lc = logo_card(176, 40)
-    img.paste(lc, ((W - 176) // 2, 380), lc)
-    f_h = ImageFont.truetype(F_SERIF, 58)
-    y = center_block(d, 640, title, f_h, head_c, 76, max_w=600)
-    # böyük follow düyməsi
-    f_b = ImageFont.truetype(F_SANS, 48)
+    lc = logo_card(196, 44)
+    img.paste(lc, ((W - 196) // 2, 560), lc)
+    f_h = ImageFont.truetype(F_SERIF, 62)
+    y = center_block(d, 900, title, f_h, head_c, 82, max_w=640)
+    f_b = ImageFont.truetype(F_SANS, 52)
     label = "+ İzlə"
     tw = d.textlength(label, font=f_b)
-    bw, bh = int(tw) + 150, 116
-    bx, by = (W - bw) // 2, y + 44
+    bw, bh = int(tw) + 160, 126
+    bx, by = (W - bw) // 2, y + 50
     d.rounded_rectangle([bx, by, bx + bw, by + bh], radius=bh // 2, fill=NAVY)
-    d.text(((W - tw) / 2, by + 30), label, font=f_b, fill=WHITE)
-    f_r = ImageFont.truetype(F_SANS, 34)
-    center_block(d, by + bh + 34, follow_line, f_r, sub_c, 46, max_w=620)
-    f_u = ImageFont.truetype(F_SANS, 30)
-    center(d, 1250, "petekh.com · avqustda", f_u, ORANGE_DARK)
+    d.text(((W - tw) / 2, by + 34), label, font=f_b, fill=WHITE)
+    f_r = ImageFont.truetype(F_SANS, 36)
+    y2 = center_block(d, by + bh + 40, follow_line, f_r, sub_c, 50, max_w=660)
+    f_u = ImageFont.truetype(F_SANS, 32)
+    center(d, y2 + 24, "petekh.com · avqustda", f_u, ORANGE_DARK)
     return img
 
 
