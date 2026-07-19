@@ -67,11 +67,15 @@ CTAS = [
     ("Böyük gün yaxınlaşır", "İzlə — Petekh avqustda"),
 ]
 
-SHOT_OVERLAYS = [
-    "Belə görünəcək",
-    "Cibindəki zoomağaza",
-    "Avqustda səndə",
-]
+# Real app ekranlarına uyğun başlıqlar (fayl adına görə)
+SHOT_CAPTIONS = {
+    "01-home": "Bütün məhsullar bir yerdə",
+    "02-product": "Qiymət, stok, abunə — hamısı burada",
+    "03-cart": "Bir toxunuşla sifariş",
+    "04-mypets": "Heyvanının öz profili",
+    "06-bal": "Al, Bal qazan",
+    "10-petai": "PetAI — ağıllı köməkçin",
+}
 
 
 def gradient(img, top, bottom):
@@ -218,27 +222,27 @@ def feature_slide(title, sub, scheme):
     return img
 
 
-def shot_slide(shot_path, headline, scheme):
+def shot_slide(shot_path, caption, scheme):
     img, head_c, _ = base(scheme)
     d = ImageDraw.Draw(img)
     f_h = ImageFont.truetype(F_SERIF, 44)
-    center_block(d, 315, headline, f_h, head_c, 58)
+    center_block(d, 312, caption, f_h, head_c, 56)
     shot = Image.open(shot_path).convert("RGB")
-    ph_w = 360
-    ph_h = min(int(ph_w * shot.height / shot.width), 720)
-    inner = shot.resize((ph_w - 26, ph_h - 26))
+    ph_w = 322                                     # aspect qorunur — əyilmə yoxdur
+    ph_h = int(ph_w * shot.height / shot.width)
+    inner = shot.resize((ph_w - 24, ph_h - 24))
     mask = Image.new("L", inner.size, 0)
-    ImageDraw.Draw(mask).rounded_rectangle([0, 0, inner.width - 1, inner.height - 1], radius=32, fill=255)
-    frame = Image.new("RGBA", (ph_w + 34, ph_h + 34), (0, 0, 0, 0))
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, inner.width - 1, inner.height - 1], radius=30, fill=255)
+    frame = Image.new("RGBA", (ph_w + 32, ph_h + 32), (0, 0, 0, 0))
     fd = ImageDraw.Draw(frame)
     sh = Image.new("RGBA", frame.size, (0, 0, 0, 0))
-    ImageDraw.Draw(sh).rounded_rectangle([24, 30, ph_w + 6, ph_h + 14], radius=44, fill=(60, 30, 0, 110))
-    frame.alpha_composite(sh.filter(ImageFilter.GaussianBlur(13)))
-    fd.rounded_rectangle([15, 15, ph_w + 14, ph_h + 14], radius=42, fill=NAVY)
-    frame.paste(inner, (28, 28), mask)
-    fd.rounded_rectangle([ph_w // 2 - 44, 20, ph_w // 2 + 58, 31], radius=6, fill=(20, 22, 30))
-    img.paste(frame, ((W - frame.width) // 2, 440), frame)
-    follow_chip(img)
+    ImageDraw.Draw(sh).rounded_rectangle([22, 28, ph_w + 6, ph_h + 12], radius=42, fill=(60, 30, 0, 110))
+    frame.alpha_composite(sh.filter(ImageFilter.GaussianBlur(12)))
+    fd.rounded_rectangle([14, 14, ph_w + 13, ph_h + 13], radius=40, fill=NAVY)
+    frame.paste(inner, (26, 26), mask)
+    fd.rounded_rectangle([ph_w // 2 - 42, 19, ph_w // 2 + 54, 29], radius=6, fill=(20, 22, 30))
+    img.paste(frame, ((W - frame.width) // 2, 420), frame)
+    follow_chip(img, y=1235)
     return img
 
 
@@ -290,9 +294,11 @@ def main():
         made.append(name)
 
     for si, shot in enumerate(args.shot):
-        for oi, ov in enumerate(SHOT_OVERLAYS):
+        base_name = os.path.splitext(os.path.basename(shot))[0]
+        caption = SHOT_CAPTIONS.get(base_name, "Belə görünəcək")
+        for oi, scheme in enumerate(("cream", "orange")):
             name = f"shot-{si:02d}-{oi}.png"
-            shot_slide(shot, ov, "orange" if oi % 2 == 0 else "cream").save(os.path.join(OUT, name), optimize=True)
+            shot_slide(shot, caption, scheme).save(os.path.join(OUT, name), optimize=True)
             made.append(name)
 
     for n in made:
