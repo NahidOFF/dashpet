@@ -1,0 +1,20 @@
+{
+  // Petekh sosial media avtomatlaşdırması — gündəlik TikTok slideshow planlayıcısı.
+  // Deploy: cd social-worker && npx wrangler deploy
+  // Secrets: npx wrangler secret put ZERNIO_API_KEYS   (sk_...,sk_...,sk_...)
+  //          npx wrangler secret put RUN_TOKEN         (istənilən uzun təsadüfi sətir)
+  "name": "petekh-social",
+  "main": "worker.js",
+  "compatibility_date": "2025-01-01",
+  "triggers": {
+    // 04:30 UTC = 08:30 Bakı — günün postlarını planlaşdırır (postlar 09:30-dan başlayır)
+    "crons": ["30 4 * * *"]
+  },
+  "vars": {
+    "SITE_BASE": "https://petekh.com",
+    "DRY_RUN": "0"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

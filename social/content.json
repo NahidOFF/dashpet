@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "slideBase": "/social/slides/",
+  "slides": {
+    "hooks": [
+      "hook-00-cream.png",
+      "hook-00-orange.png",
+      "hook-01-cream.png",
+      "hook-01-orange.png",
+      "hook-02-cream.png",
+      "hook-02-orange.png",
+      "hook-03-cream.png",
+      "hook-03-orange.png",
+      "hook-04-cream.png",
+      "hook-04-orange.png",
+      "hook-05-cream.png",
+      "hook-05-orange.png",
+      "hook-06-cream.png",
+      "hook-06-orange.png",
+      "hook-07-cream.png",
+      "hook-07-orange.png"
+    ],
+    "features": [
+      "feature-00.png",
+      "feature-01.png",
+      "feature-02.png",
+      "feature-03.png",
+      "feature-04.png",
+      "feature-05.png",
+      "feature-06.png",
+      "feature-07.png"
+    ],
+    "shots": [
+      "shot-00-0.png",
+      "shot-00-1.png",
+      "shot-00-2.png"
+    ],
+    "ctas": [
+      "cta-00.png",
+      "cta-01.png",
+      "cta-02.png"
+    ]
+  },
+  "slidesPerPost": {
+    "min": 6,
+    "max": 8
+  },
+  "postTimesBaku": [
+    "09:30",
+    "13:45",
+    "19:20"
+  ],
+  "accountStaggerMinutes": 7,
+  "timezone": "Asia/Baku",
+  "captions": [
+    "Ev heyvanın üçün nə lazımdırsa — hamısı Petekh-də 🐾 Sifariş et, qapına gəlsin!",
+    "Pişiyin yemi bitib? Panikaya ehtiyac yoxdur — 5 dəqiqəyə sifariş et 🐱",
+    "Zoomağazaya getməyə vaxt yoxdur? Petekh sənin yerinə gedər 🚀",
+    "Bütün zoomağazalar bir tətbiqdə. Qiymətləri müqayisə et, sərfəlisini seç 💰",
+    "Sevimli dostun ac qalmasın — sürətli çatdırılma ilə Petekh yanındadır 🐶",
+    "Qidadan oyuncağa, qumdan vitaminə — hər şey bir səbətdə 🧺",
+    "İt sahibləri bura 👀 Sevimli yemlər endirimlə Petekh-də",
+    "Şəhərindəki zoomağazaların hamısı cibində. Petekh-i sına!",
+    "Rəyləri oxu, qiymətləri tutuşdur, ən yaxşısını sifariş et ⭐",
+    "Evdən çıxmadan pet alış-verişi? Bəli, mümkündür — Petekh 🏠",
+    "Sifarişin harada? Petekh-də hər addımı izləyə bilərsən 📦",
+    "Yerli zoomağazaları dəstəklə — Petekh ilə onlardan onlayn al 🤝",
+    "Pişik, it, quş, gəmirici... Kimin var? Hamısı üçün hər şey var 🐾",
+    "Hər həftə yeni endirimlər. Qaçırma! 🔥",
+    "Pet sahibi olmaq asan deyil — amma Petekh ilə alış-veriş asandır 😌",
+    "Bir tıkla sifariş, qapına çatdırılma. Bu qədər sadə ✨",
+    "Sevimli dostunun ehtiyaclarını bizə həvalə et 🧡",
+    "Yem, oyuncaq, aksesuar — axtardığın hər şey buradadır 🎾",
+    "Qiymət müqayisəsi etməkdən yorulmusan? Petekh sənin üçün edir 📊",
+    "Gecə yem bitdi? Səhər ilk işin Petekh-dən sifariş olsun ☀️"
+  ],
+  "hashtagSets": [
+    [
+      "petekh",
+      "evheyvanı",
+      "pet",
+      "baku",
+      "azerbaycan"
+    ],
+    [
+      "petekh",
+      "pişik",
+      "cat",
+      "petshop",
+      "baki"
+    ],
+    [
+      "petekh",
+      "it",
+      "dog",
+      "çatdırılma",
+      "azerbaycan"
+    ],
+    [
+      "petekh",
+      "zoomagaza",
+      "petshop",
+      "endirim",
+      "baku"
+    ],
+    [
+      "petekh",
+      "pets",
+      "petlover",
+      "azerbaycan",
+      "onlaynsifariş"
+    ],
+    [
+      "petekh",
+      "cats",
+      "dogs",
+      "baku",
+      "pettok"
+    ]
+  ]
+}
