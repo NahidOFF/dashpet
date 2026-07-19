@@ -86,17 +86,36 @@ def hexagons(img, color=(255, 255, 255, 70)):
     img.paste(layer, (0, 0), layer)
 
 
+_PAW_SPRITE = None
+
+
+def _paw_sprite():
+    """Loqonun mərkəzindəki əsl it pəncəsini sprite kimi çıxarır."""
+    global _PAW_SPRITE
+    if _PAW_SPRITE is None:
+        logo = Image.open(LOGO).convert("RGBA")
+        px = logo.load()
+        w, h = logo.size
+        mask = Image.new("L", (w, h), 0)
+        mp = mask.load()
+        for y in range(h):
+            for x in range(w):
+                r, g, b, a = px[x, y]
+                if a > 100 and r < 110 and g < 110 and b < 110:
+                    mp[x, y] = a
+        bbox = mask.getbbox()
+        _PAW_SPRITE = mask.crop(bbox)
+    return _PAW_SPRITE
+
+
 def paw(size, color):
-    """Pəncə izi — brend işarəsi (emoji əvəzinə deterministik qrafika)."""
-    s = size
-    layer = Image.new("RGBA", (s, s), (0, 0, 0, 0))
-    d = ImageDraw.Draw(layer)
-    pad_w, pad_h = int(s * 0.52), int(s * 0.40)
-    d.ellipse([(s - pad_w) // 2, int(s * 0.45), (s + pad_w) // 2, int(s * 0.45) + pad_h], fill=color)
-    toe = int(s * 0.16)
-    for cx, cy in [(0.24, 0.28), (0.435, 0.16), (0.65, 0.28)]:
-        x, y = int(cx * s), int(cy * s)
-        d.ellipse([x - toe // 2, y - toe // 2, x + toe // 2, y + toe // 2], fill=color)
+    """Loqodakı real pəncə izi, istənilən rəngdə."""
+    sprite = _paw_sprite()
+    ratio = min(size / sprite.width, size / sprite.height)
+    m = sprite.resize((max(1, int(sprite.width * ratio)), max(1, int(sprite.height * ratio))))
+    layer = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    solid = Image.new("RGBA", m.size, tuple(color[:3]) + (255,))
+    layer.paste(solid, ((size - m.width) // 2, (size - m.height) // 2), m)
     return layer
 
 
