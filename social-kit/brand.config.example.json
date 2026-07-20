@@ -1,0 +1,62 @@
+{
+  "brand": {
+    "name": "Petekh",
+    "domain": "petekh.com",
+    "logo": "logo.png",
+    "footer": "petekh.com · avqustda"
+  },
+  "palette": {
+    "cream":       [255, 247, 230],
+    "cream2":      [250, 232, 200],
+    "yellow":      [255, 217, 121],
+    "accent":      [244, 155, 13],
+    "accent_dark": [222, 127, 6],
+    "dark":        [46, 50, 64],
+    "brown":       [122, 59, 0],
+    "white":       [255, 255, 255]
+  },
+  "schedule": {
+    "postTimesLocal": ["09:30", "13:45", "19:20"],
+    "timezone": "Asia/Baku",
+    "utcOffsetHours": 4,
+    "accountStaggerMinutes": 7,
+    "slidesPerPost": { "min": 6, "max": 8 }
+  },
+  "hooks": [
+    ["Ev heyvanın üçün hər şey — bir tətbiqdə", "Petekh avqustda gəlir"],
+    ["Pişiyin yemi bitəndə panika?", "Tezliklə buna son"],
+    ["Bütün zoomağazalar bir tətbiqdə", "Tezliklə — Petekh"],
+    ["Bakıda pet alış-verişi dəyişir", "Petekh yolda"],
+    ["Sevimli dostun üçün böyük yenilik", "Az qalıb"]
+  ],
+  "features": [
+    ["Çoxmağazalı seçim", "Bir səbətdə ən yaxşı qiymət"],
+    ["Qapına çatdırılma", "Evdən çıxmadan sifariş"],
+    ["Endirim və kampaniyalar", "Hər həftə yeni təkliflər"],
+    ["Təhlükəsiz ödəniş", "Kartla və ya nağd"],
+    ["Rəylərlə seçim", "Digər sahiblərin təcrübəsi"]
+  ],
+  "ctas": [
+    ["Açılışı qaçırma", "İzlə — avqustda xəbər ver"],
+    ["İlk sınayanlardan ol", "İzlə, açılışdan xəbərdar ol"],
+    ["Böyük gün yaxınlaşır", "İzlə — Petekh avqustda"]
+  ],
+  "shotCaptions": {
+    "01-home": "Bütün məhsullar bir yerdə",
+    "02-product": "Qiymət, stok, abunə",
+    "03-cart": "Bir toxunuşla sifariş"
+  },
+  "followLabel": "+ İzlə",
+  "captions": [
+    "Petekh avqustda gəlir — ev heyvanın üçün hər şey bir tətbiqdə 🐾 İzlə ki, açılışı qaçırma!",
+    "Bütün zoomağazalar bir yerdə olsa necə olar? Avqustda görəcəksən 👀 İzlə!",
+    "Bakıda pet alış-verişi dəyişir. Petekh yolda 🧡 İzlə ki, ilk sən biləsən",
+    "Açılışa az qalıb! Petekh-i ilk sınayanlardan olmaq üçün izlə 🔔",
+    "Böyük gün yaxınlaşır — Petekh avqustda istifadəyə verilir 🎉 İndi izlə, hazır ol"
+  ],
+  "hashtagSets": [
+    ["petekh", "evheyvanı", "pet", "baku", "azerbaycan"],
+    ["petekh", "pişik", "cat", "petshop", "baki"],
+    ["petekh", "it", "dog", "çatdırılma", "azerbaycan"]
+  ]
+}

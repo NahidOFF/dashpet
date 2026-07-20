@@ -1,0 +1,9 @@
+{
+  "tokenKey": "token",
+  "nav": "go",
+  "screens": [
+    {"name": "01-home",    "call": "go('home')"},
+    {"name": "02-product", "call": "openProduct((S.products&&S.products[0]&&S.products[0].id))"},
+    {"name": "03-cart",    "call": "(S.products||[]).slice(0,3).forEach(p=>addCart(p.id)); go('card')"}
+  ]
+}
