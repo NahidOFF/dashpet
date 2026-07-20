@@ -31,12 +31,18 @@
       "feature-07.png"
     ],
     "shots": [
-      "shot-00.png",
-      "shot-01.png",
-      "shot-02.png",
-      "shot-03.png",
-      "shot-04.png",
-      "shot-05.png"
+      "shot-00-0.png",
+      "shot-00-1.png",
+      "shot-01-0.png",
+      "shot-01-1.png",
+      "shot-02-0.png",
+      "shot-02-1.png",
+      "shot-03-0.png",
+      "shot-03-1.png",
+      "shot-04-0.png",
+      "shot-04-1.png",
+      "shot-05-0.png",
+      "shot-05-1.png"
     ],
     "ctas": [
       "cta-00.png",
