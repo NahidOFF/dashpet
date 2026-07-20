@@ -221,29 +221,35 @@ def feature_slide(title, sub, scheme):
     return img
 
 
-def shot_slide(shot_path, caption, scheme):
-    img, head_c, _ = base(scheme)
-    d = ImageDraw.Draw(img)
-    f_h = ImageFont.truetype(F_SERIF, 48)
-    center_block(d, 210, caption, f_h, head_c, 60)
-
-    # Dik (portret) telefon, tam boy — kəsmə yoxdur, böyük göstərilir
+def shot_slide(shot_path, caption, scheme=None):
+    """App ekranı TAM EKRAN (full-bleed) — kənardan-kənara, çərçivə/fon yoxdur."""
     shot = Image.open(shot_path).convert("RGB")
-    ph_w = 570
-    ph_h = int(ph_w * shot.height / shot.width)
-    inner = shot.resize((ph_w - 30, ph_h - 30))
-    mask = Image.new("L", inner.size, 0)
-    ImageDraw.Draw(mask).rounded_rectangle([0, 0, inner.width - 1, inner.height - 1], radius=44, fill=255)
-    frame = Image.new("RGBA", (ph_w + 40, ph_h + 40), (0, 0, 0, 0))
-    fd = ImageDraw.Draw(frame)
-    sh = Image.new("RGBA", frame.size, (0, 0, 0, 0))
-    ImageDraw.Draw(sh).rounded_rectangle([28, 34, ph_w + 8, ph_h + 18], radius=58, fill=(60, 30, 0, 120))
-    frame.alpha_composite(sh.filter(ImageFilter.GaussianBlur(16)))
-    fd.rounded_rectangle([16, 16, ph_w + 23, ph_h + 23], radius=56, fill=NAVY)   # telefon gövdəsi
-    frame.paste(inner, (30, 30), mask)
-    fd.rounded_rectangle([ph_w // 2 - 50, 22, ph_w // 2 + 70, 35], radius=7, fill=(20, 22, 30))  # notch
-    img.paste(frame, ((W - frame.width) // 2, 330), frame)
-    follow_chip(img, y=1620)
+    scale = max(W / shot.width, H / shot.height)
+    nw, nh = int(shot.width * scale + 0.5), int(shot.height * scale + 0.5)
+    shot = shot.resize((nw, nh))
+    ox, oy = (nw - W) // 2, (nh - H) // 2
+    img = shot.crop((ox, oy, ox + W, oy + H)).convert("RGB")
+
+    # Alt hissəyə yüngül qaralma (scrim) — follow çipi oxunaqlı olsun
+    scrim = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(scrim)
+    top = 1760
+    for yy in range(top, H):
+        a = int(165 * (yy - top) / (H - top))
+        sd.line([(0, yy), (W, yy)], fill=(18, 16, 12, a))
+    img = Image.alpha_composite(img.convert("RGBA"), scrim).convert("RGB")
+
+    # Kiçik "+ İzlə" çipi + brend (alt-mərkəz, TikTok mətn zonasının üstündə)
+    d = ImageDraw.Draw(img)
+    f = ImageFont.truetype(F_SANS, 40)
+    label = "+ İzlə"
+    tw = d.textlength(label, font=f)
+    pw, ph = int(tw) + 108, 86
+    x0, yc = (W - pw) // 2, 1900
+    d.rounded_rectangle([x0, yc, x0 + pw, yc + ph], radius=ph // 2, fill=NAVY)
+    d.text(((W - tw) / 2, yc + 22), label, font=f, fill=WHITE)
+    fs = ImageFont.truetype(F_SANS, 30)
+    center(d, yc + ph + 14, "petekh.com · avqustda", fs, WHITE)
     return img
 
 
@@ -295,10 +301,9 @@ def main():
     for si, shot in enumerate(args.shot):
         base_name = os.path.splitext(os.path.basename(shot))[0]
         caption = SHOT_CAPTIONS.get(base_name, "Belə görünəcək")
-        for oi, scheme in enumerate(("cream", "orange")):
-            name = f"shot-{si:02d}-{oi}.png"
-            shot_slide(shot, caption, scheme).save(os.path.join(OUT, name), optimize=True)
-            made.append(name)
+        name = f"shot-{si:02d}.png"
+        shot_slide(shot, caption).save(os.path.join(OUT, name), optimize=True)
+        made.append(name)
 
     for n in made:
         print(n)
