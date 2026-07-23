@@ -1,0 +1,65 @@
+{
+  "_comment": "QLOBAL (İngilis) şablon. TikTok məzmunu dilə görə yayır — qlobal çatım üçün mətn, caption və hashtaglar İngilis/qlobal olmalıdır. Niş sözləri öz məhsulunuza uyğunlaşdırın. Ətraflı: SETUP.md → 'Qlobal auditoriya'.",
+  "brand": {
+    "name": "YourBrand",
+    "domain": "yourbrand.com",
+    "logo": "logo.png",
+    "footer": "yourbrand.com · coming soon"
+  },
+  "palette": {
+    "cream":       [255, 247, 230],
+    "cream2":      [250, 232, 200],
+    "yellow":      [255, 217, 121],
+    "accent":      [244, 155, 13],
+    "accent_dark": [222, 127, 6],
+    "dark":        [46, 50, 64],
+    "brown":       [122, 59, 0],
+    "white":       [255, 255, 255]
+  },
+  "schedule": {
+    "_comment": "Vaxtlar hədəf bazarın yerli axşam saatlarına uyğun olsun (ən yüksək aktivlik). Nümunə: ABŞ Şərq zonası.",
+    "postTimesLocal": ["12:00", "17:30", "20:30"],
+    "timezone": "America/New_York",
+    "utcOffsetHours": -4,
+    "accountStaggerMinutes": 7,
+    "slidesPerPost": { "min": 6, "max": 8 }
+  },
+  "hooks": [
+    ["Everything your pet needs — in one app", "Coming soon"],
+    ["Out of pet food again?", "There's a better way"],
+    ["Every pet store in one place", "Launching soon"],
+    ["Pet shopping, reinvented", "Get on the list"],
+    ["Something big for pet parents", "Almost here"]
+  ],
+  "features": [
+    ["Compare every store", "Best price in one cart"],
+    ["Delivered to your door", "Order without leaving home"],
+    ["Deals every week", "New offers all the time"],
+    ["Secure checkout", "Card or cash"],
+    ["Shop by reviews", "Real owners, real feedback"]
+  ],
+  "ctas": [
+    ["Don't miss the launch", "Follow — we'll tell you when"],
+    ["Be the first to try it", "Follow to get early access"],
+    ["The big day is close", "Follow — launching soon"]
+  ],
+  "shotCaptions": {
+    "01-home": "Everything in one place",
+    "02-product": "Price, stock, subscribe",
+    "03-cart": "Order in one tap"
+  },
+  "followLabel": "+ Follow",
+  "captions": [
+    "Everything your pet needs — in one app 🐾 Follow so you don't miss the launch!",
+    "What if every pet store lived in one app? Coming soon 👀 Follow!",
+    "Pet shopping is about to change. We're almost here 🧡 Follow to be first",
+    "Launch is close! Follow to be one of the first to try it 🔔",
+    "The big day is coming — follow now and be ready 🎉"
+  ],
+  "hashtagSets": [
+    ["pets", "petsoftiktok", "petcare", "fyp", "foryou"],
+    ["dogsoftiktok", "dog", "puppy", "petparent", "fyp"],
+    ["catsoftiktok", "cat", "kitten", "petlover", "foryoupage"],
+    ["petshopping", "petstore", "startup", "newapp", "fyp"]
+  ]
+}

@@ -92,8 +92,42 @@ python3 build_content.py --config brand.config.json --slides ../social/slides \
 - **Məzmunu yeniləmək.** Slaydlar/caption üçün `brand.config.json`-u dəyiş və 3-cü
   addımı təkrar işlət; sayt deploy olan kimi qüvvəyə minir (Worker-ə toxunmadan).
 
+## Qlobal auditoriya (niyə yalnız bir ölkədən gəlir?)
+
+TikTok yeni məzmunu **dilə və siqnallara görə** yayır ("cold start"). Əgər postlar
+yalnız bir ölkədən (məs. Azərbaycandan) baxılırsa, səbəb demək olar həmişə budur:
+
+**Auditoriyanı bölgəyə kilidləyən siqnallar:**
+1. **Slayd mətninin dili** — AZ dilli başlıq/mətn = AZ auditoriya. Qlobal üçün İngilis.
+2. **Caption dili** — captionlar hədəf dildə olmalıdır.
+3. **Hashtaglar** — `baku`, `azerbaycan`, `baki` kimi yerli teqlər auditoriyanı
+   ora yönəldir. Qlobal üçün: `pets`, `dogsoftiktok`, `fyp`, `foryou` + niş teqlər.
+4. **App ekran görüntülərinin dili** — telefon slaydında AZ yazı ("Səbət", "Satın al")
+   görünürsə, o da siqnaldır. Qlobal üçün app-ı İngilis dildə çəkin.
+
+**Nə etməli (hər qlobal biznesin `brand.config.json`-unda):**
+- `brand.config.global.example.json`-u əsas götürün (İngilis mətn + qlobal hashtaglar).
+- `hooks`/`features`/`ctas`/`captions`/`shotCaptions` → hədəf dildə, məhsulunuza uyğun.
+- `hashtagSets` → yerli teqləri çıxarın, qlobal + niş teqlər qoyun.
+- `schedule.timezone` / `postTimesLocal` → hədəf bazarın axşam saatlarına uyğun.
+- App ekranlarını hədəf dildə yenidən çəkin (`capture_app_shots.py`), və ya yalnız
+  branded (İngilis) slaydlarla işləyin.
+- 3-cü addımı təkrar işlədin və deploy edin.
+
+**TikTok tərəfdə (config-dən kənar, amma vacib):**
+- **Hesabın regionu** hesab yaradılanda SIM/telefon dilinə görə təyin olunur və
+  ilk auditoriyaya təsir edir. Qlobal hədəf üçün hesabı hədəf bölgə/dil parametrləri
+  ilə qurmaq faydalıdır (VPN ilə "aldatmaq" risklidir — tövsiyə olunmur).
+- **İlk baxanlar** yayımı formalaşdırır: ilk günlərdə məzmun İngilis + qlobal teqlərlə
+  ardıcıl olsa, TikTok tədricən bölgədən kənara çıxarır. Səbir + ardıcıllıq lazımdır.
+- **Musiqi/trend** bölgəyə görə dəyişir; `autoAddMusic` qlobal trendə uyğunlaşır.
+
+> Xülasə: dil + hashtag + app ekranı dili — nəyi dəyişsəniz, auditoriya da onu izləyir.
+> Bu, tamamilə `brand.config.json`-dan idarə olunur; kod dəyişmir.
+
 ## Fayllar
-- `brand.config.example.json` — per-biznes konfiqurasiya şablonu
+- `brand.config.example.json` — per-biznes konfiqurasiya şablonu (Azərbaycan nümunəsi)
+- `brand.config.global.example.json` — qlobal (İngilis) konfiqurasiya şablonu
 - `generate_slides.py` — slayd generatoru (config-driven, 9:16)
 - `build_content.py` — content.json qurucusu
 - `worker.js` + `wrangler.example.jsonc` — Cloudflare planlayıcı
